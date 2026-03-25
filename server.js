@@ -2,12 +2,14 @@ const http = require("http");
 const fs = require("fs");
 const path = require("path");
 const { URL } = require("url");
+const { Pool } = require("pg");
 
 const PORT = process.env.PORT || 3000;
 const ROOT = __dirname;
 const PUBLIC_DIR = path.join(ROOT, "public");
 const DATA_DIR = path.join(ROOT, "data");
 const STORE_FILE = path.join(DATA_DIR, "store.json");
+const DATABASE_URL = process.env.DATABASE_URL;
 
 const defaultStore = {
   roles: [
@@ -97,6 +99,113 @@ const defaultStore = {
   ]
 };
 
+const initSql = `
+CREATE TABLE IF NOT EXISTS roles (
+  id BIGSERIAL PRIMARY KEY,
+  role_code VARCHAR(50) UNIQUE NOT NULL,
+  role_name VARCHAR(100) NOT NULL
+);
+CREATE TABLE IF NOT EXISTS users (
+  id BIGSERIAL PRIMARY KEY,
+  employee_code VARCHAR(50) UNIQUE NOT NULL,
+  full_name VARCHAR(150) NOT NULL,
+  role_id BIGINT NOT NULL REFERENCES roles(id),
+  pin_code VARCHAR(20),
+  is_active BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE TABLE IF NOT EXISTS jobs (
+  id BIGSERIAL PRIMARY KEY,
+  job_no VARCHAR(100) UNIQUE NOT NULL,
+  job_name VARCHAR(255) NOT NULL,
+  customer_name VARCHAR(255),
+  description TEXT,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE TABLE IF NOT EXISTS work_orders (
+  id BIGSERIAL PRIMARY KEY,
+  work_order_no VARCHAR(100) UNIQUE NOT NULL,
+  job_id BIGINT NOT NULL REFERENCES jobs(id),
+  description TEXT,
+  planned_qty DECIMAL(18,2) NOT NULL DEFAULT 0,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE TABLE IF NOT EXISTS parts (
+  id BIGSERIAL PRIMARY KEY,
+  part_no VARCHAR(100) UNIQUE NOT NULL,
+  part_name VARCHAR(255) NOT NULL,
+  unit VARCHAR(50) NOT NULL DEFAULT 'PCS',
+  min_stock DECIMAL(18,2) NOT NULL DEFAULT 0,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE TABLE IF NOT EXISTS boxes (
+  id BIGSERIAL PRIMARY KEY,
+  box_code VARCHAR(100) UNIQUE NOT NULL,
+  job_id BIGINT REFERENCES jobs(id),
+  work_order_id BIGINT REFERENCES work_orders(id),
+  description TEXT,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE TABLE IF NOT EXISTS qr_codes (
+  id BIGSERIAL PRIMARY KEY,
+  qr_value VARCHAR(255) UNIQUE NOT NULL,
+  entity_type VARCHAR(30) NOT NULL,
+  entity_id BIGINT NOT NULL,
+  is_active BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE TABLE IF NOT EXISTS locations (
+  id BIGSERIAL PRIMARY KEY,
+  location_code VARCHAR(50) UNIQUE NOT NULL,
+  location_name VARCHAR(100) NOT NULL,
+  description TEXT
+);
+CREATE TABLE IF NOT EXISTS item_status (
+  id BIGSERIAL PRIMARY KEY,
+  status_code VARCHAR(50) UNIQUE NOT NULL,
+  status_name VARCHAR(100) NOT NULL
+);
+CREATE TABLE IF NOT EXISTS stock_transactions (
+  id BIGSERIAL PRIMARY KEY,
+  transaction_no VARCHAR(100) UNIQUE NOT NULL,
+  qr_code_id BIGINT NOT NULL REFERENCES qr_codes(id),
+  entity_type VARCHAR(30) NOT NULL,
+  entity_id BIGINT NOT NULL,
+  action_type VARCHAR(30) NOT NULL,
+  qty DECIMAL(18,2) NOT NULL DEFAULT 0,
+  from_location_id BIGINT REFERENCES locations(id),
+  to_location_id BIGINT REFERENCES locations(id),
+  reference_job_id BIGINT REFERENCES jobs(id),
+  reference_work_order_id BIGINT REFERENCES work_orders(id),
+  status_after_id BIGINT REFERENCES item_status(id),
+  performed_by BIGINT NOT NULL REFERENCES users(id),
+  performed_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  remark TEXT,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE TABLE IF NOT EXISTS stock_balances (
+  id BIGSERIAL PRIMARY KEY,
+  entity_type VARCHAR(30) NOT NULL,
+  entity_id BIGINT NOT NULL,
+  qty_on_hand DECIMAL(18,2) NOT NULL DEFAULT 0,
+  current_status_id BIGINT REFERENCES item_status(id),
+  current_location_id BIGINT REFERENCES locations(id),
+  last_transaction_id BIGINT REFERENCES stock_transactions(id),
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE (entity_type, entity_id)
+);
+CREATE INDEX IF NOT EXISTS idx_qr_codes_qr_value ON qr_codes(qr_value);
+CREATE INDEX IF NOT EXISTS idx_transactions_entity ON stock_transactions(entity_type, entity_id);
+CREATE INDEX IF NOT EXISTS idx_transactions_performed_at ON stock_transactions(performed_at DESC);
+`;
+
+const db = DATABASE_URL ? new Pool({ connectionString: DATABASE_URL }) : null;
+
 function ensureStore() {
   if (!fs.existsSync(DATA_DIR)) {
     fs.mkdirSync(DATA_DIR, { recursive: true });
@@ -127,6 +236,7 @@ function sendFile(res, filePath) {
     ".css": "text/css; charset=utf-8",
     ".js": "application/javascript; charset=utf-8"
   };
+
   fs.readFile(filePath, (error, data) => {
     if (error) {
       res.writeHead(404);
@@ -171,10 +281,14 @@ function resolveEntity(store, entityType, entityId) {
     BOX: ["boxes", "boxCode", "description"]
   };
   const config = maps[entityType];
-  if (!config) return null;
+  if (!config) {
+    return null;
+  }
   const [collection, codeKey, nameKey] = config;
   const entity = store[collection].find(item => item.id === entityId);
-  if (!entity) return null;
+  if (!entity) {
+    return null;
+  }
   return { code: entity[codeKey], name: entity[nameKey] || entity[codeKey] };
 }
 
@@ -185,9 +299,7 @@ function enrichTransaction(store, transaction) {
   const toLocation = store.locations.find(item => item.id === transaction.toLocationId);
   const entity = resolveEntity(store, transaction.entityType, transaction.entityId);
   const job = transaction.referenceJobId ? store.jobs.find(item => item.id === transaction.referenceJobId) : null;
-  const workOrder = transaction.referenceWorkOrderId
-    ? store.workOrders.find(item => item.id === transaction.referenceWorkOrderId)
-    : null;
+  const workOrder = transaction.referenceWorkOrderId ? store.workOrders.find(item => item.id === transaction.referenceWorkOrderId) : null;
 
   return {
     ...transaction,
@@ -208,23 +320,25 @@ function computeDashboard(store) {
     const status = store.statuses.find(item => item.id === balance.currentStatusId);
     const location = store.locations.find(item => item.id === balance.currentLocationId);
     const part = balance.entityType === "PART" ? store.parts.find(item => item.id === balance.entityId) : null;
+
     return {
       id: balance.id,
       entityType: balance.entityType,
+      entityId: balance.entityId,
       code: entity ? entity.code : "-",
       name: entity ? entity.name : "-",
-      qtyOnHand: balance.qtyOnHand,
+      qtyOnHand: Number(balance.qtyOnHand),
       currentStatus: status ? status.statusName : "-",
       currentLocation: location ? location.locationName : "-",
       updatedAt: balance.updatedAt,
       unit: part ? part.unit : "",
-      minStock: part ? part.minStock : 0,
+      minStock: part ? Number(part.minStock) : 0,
       isLowStock: part ? Number(balance.qtyOnHand) <= Number(part.minStock) : false
     };
   });
 }
 
-function handleCreateTransaction(store, payload) {
+function handleCreateTransactionFile(store, payload) {
   const qr = store.qrCodes.find(item => item.qrValue === payload.qrValue && item.isActive);
   if (!qr) {
     return { statusCode: 400, payload: { error: "QR code not found." } };
@@ -280,8 +394,8 @@ function handleCreateTransaction(store, payload) {
   };
 
   store.stockTransactions.push(transaction);
-
   const newQty = actionType === "RECEIVE" ? currentQty + qty : currentQty - qty;
+
   if (balance) {
     balance.qtyOnHand = newQty;
     balance.currentStatusId = transaction.statusAfterId;
@@ -313,47 +427,412 @@ function handleCreateTransaction(store, payload) {
   };
 }
 
-const server = http.createServer(async (req, res) => {
-  const requestUrl = new URL(req.url, `http://${req.headers.host}`);
+function toCamelUser(row) {
+  return {
+    id: row.id,
+    employeeCode: row.employee_code,
+    fullName: row.full_name,
+    roleId: row.role_id,
+    isActive: row.is_active
+  };
+}
 
-  if (req.method === "GET" && requestUrl.pathname === "/api/bootstrap") {
+function toCamelJob(row) {
+  return {
+    id: row.id,
+    jobNo: row.job_no,
+    jobName: row.job_name,
+    customerName: row.customer_name,
+    description: row.description
+  };
+}
+
+function toCamelWorkOrder(row) {
+  return {
+    id: row.id,
+    workOrderNo: row.work_order_no,
+    jobId: row.job_id,
+    description: row.description,
+    plannedQty: Number(row.planned_qty)
+  };
+}
+
+function toCamelLocation(row) {
+  return {
+    id: row.id,
+    locationCode: row.location_code,
+    locationName: row.location_name
+  };
+}
+
+async function initializeDatabase() {
+  if (!db) {
+    ensureStore();
+    return;
+  }
+
+  await db.query(initSql);
+  const countResult = await db.query("SELECT COUNT(*)::int AS count FROM roles");
+  if (countResult.rows[0].count > 0) {
+    return;
+  }
+
+  await db.query("BEGIN");
+  try {
+    await db.query("INSERT INTO roles (id, role_code, role_name) VALUES (1, 'ADMIN', 'Admin'), (2, 'CLERK', 'Store Clerk')");
+    await db.query("INSERT INTO users (id, employee_code, full_name, role_id, is_active) VALUES (1, 'U001', 'Somchai Chaiya', 1, TRUE), (2, 'U008', 'Wittaya Saeng', 2, TRUE)");
+    await db.query("INSERT INTO jobs (id, job_no, job_name, customer_name, description) VALUES (1, 'JOB-20260325-01', 'Motor Housing', 'ACME', 'Pilot lot')");
+    await db.query("INSERT INTO work_orders (id, work_order_no, job_id, description, planned_qty) VALUES (1, 'WO-20260325-01', 1, 'Line A', 120)");
+    await db.query("INSERT INTO parts (id, part_no, part_name, unit, min_stock) VALUES (1, 'PT-1002', 'Bearing', 'PCS', 10), (2, 'PT-2004', 'Housing', 'PCS', 5)");
+    await db.query("INSERT INTO boxes (id, box_code, job_id, work_order_id, description) VALUES (1, 'BX-00045', 1, 1, 'Bearing set box')");
+    await db.query("INSERT INTO qr_codes (id, qr_value, entity_type, entity_id, is_active) VALUES (1, 'JOB-20260325-01', 'JOB', 1, TRUE), (2, 'WO-20260325-01', 'WORK_ORDER', 1, TRUE), (3, 'PT-1002', 'PART', 1, TRUE), (4, 'PT-2004', 'PART', 2, TRUE), (5, 'BX-00045', 'BOX', 1, TRUE)");
+    await db.query("INSERT INTO item_status (id, status_code, status_name) VALUES (1, 'PENDING_RECEIVE', 'Pending Receive'), (2, 'IN_STOCK', 'In Stock'), (3, 'ISSUED', 'Issued')");
+    await db.query("INSERT INTO locations (id, location_code, location_name) VALUES (1, 'A01', 'Rack A01'), (2, 'PROD', 'Production')");
+    await db.query("INSERT INTO stock_transactions (id, transaction_no, qr_code_id, entity_type, entity_id, action_type, qty, from_location_id, to_location_id, reference_job_id, reference_work_order_id, status_after_id, performed_by, performed_at, remark) VALUES (1, 'TXN-00001', 3, 'PART', 1, 'RECEIVE', 50, NULL, 1, 1, 1, 2, 1, '2026-03-25T09:15:00.000Z', 'Initial receive'), (2, 'TXN-00002', 3, 'PART', 1, 'ISSUE', 5, 1, 2, 1, 1, 3, 2, '2026-03-25T14:42:00.000Z', 'Issue to line')");
+    await db.query("INSERT INTO stock_balances (id, entity_type, entity_id, qty_on_hand, current_status_id, current_location_id, last_transaction_id, updated_at) VALUES (1, 'PART', 1, 45, 3, 2, 2, '2026-03-25T14:42:00.000Z')");
+    await db.query("COMMIT");
+  } catch (error) {
+    await db.query("ROLLBACK");
+    throw error;
+  }
+}
+
+async function getBootstrapData() {
+  if (!db) {
     const store = readStore();
-    json(res, 200, {
+    return {
       users: store.users,
       jobs: store.jobs,
       workOrders: store.workOrders,
       locations: store.locations,
       qrCodes: store.qrCodes
-    });
-    return;
+    };
   }
 
-  if (req.method === "GET" && requestUrl.pathname === "/api/transactions") {
+  const [users, jobs, workOrders, locations, qrCodes] = await Promise.all([
+    db.query("SELECT id, employee_code, full_name, role_id, is_active FROM users WHERE is_active = TRUE ORDER BY id"),
+    db.query("SELECT id, job_no, job_name, customer_name, description FROM jobs ORDER BY id"),
+    db.query("SELECT id, work_order_no, job_id, description, planned_qty FROM work_orders ORDER BY id"),
+    db.query("SELECT id, location_code, location_name FROM locations ORDER BY id"),
+    db.query("SELECT id, qr_value, entity_type, entity_id, is_active FROM qr_codes WHERE is_active = TRUE ORDER BY id")
+  ]);
+
+  return {
+    users: users.rows.map(toCamelUser),
+    jobs: jobs.rows.map(toCamelJob),
+    workOrders: workOrders.rows.map(toCamelWorkOrder),
+    locations: locations.rows.map(toCamelLocation),
+    qrCodes: qrCodes.rows.map(row => ({
+      id: row.id,
+      qrValue: row.qr_value,
+      entityType: row.entity_type,
+      entityId: row.entity_id,
+      isActive: row.is_active
+    }))
+  };
+}
+
+async function getTransactions(filters) {
+  if (!db) {
     const store = readStore();
-    const q = requestUrl.searchParams.get("q");
-    const action = requestUrl.searchParams.get("action");
     let rows = store.stockTransactions.map(item => enrichTransaction(store, item));
-    if (q) {
-      const needle = q.toLowerCase();
+    if (filters.q) {
+      const needle = filters.q.toLowerCase();
       rows = rows.filter(item =>
         [item.qrValue, item.entityCode, item.entityName, item.userName, item.jobNo, item.workOrderNo]
           .filter(Boolean)
           .some(value => value.toLowerCase().includes(needle))
       );
     }
-    if (action) {
-      rows = rows.filter(item => item.actionType === action.toUpperCase());
+    if (filters.action) {
+      rows = rows.filter(item => item.actionType === filters.action.toUpperCase());
     }
     rows.sort((a, b) => new Date(b.performedAt) - new Date(a.performedAt));
-    json(res, 200, rows);
+    return rows;
+  }
+
+  const params = [];
+  const conditions = [];
+  if (filters.action) {
+    params.push(filters.action.toUpperCase());
+    conditions.push(`t.action_type = $${params.length}`);
+  }
+  if (filters.q) {
+    params.push(`%${filters.q.toLowerCase()}%`);
+    conditions.push(`(
+      LOWER(q.qr_value) LIKE $${params.length}
+      OR LOWER(COALESCE(p.part_no, b.box_code, j.job_no, wo2.work_order_no, '')) LIKE $${params.length}
+      OR LOWER(COALESCE(p.part_name, b.description, j.job_name, wo2.description, '')) LIKE $${params.length}
+      OR LOWER(u.full_name) LIKE $${params.length}
+      OR LOWER(COALESCE(j2.job_no, '')) LIKE $${params.length}
+      OR LOWER(COALESCE(wo.work_order_no, '')) LIKE $${params.length}
+    )`);
+  }
+
+  const query = `
+    SELECT
+      t.id, t.transaction_no, t.qr_code_id, t.entity_type, t.entity_id, t.action_type, t.qty,
+      t.from_location_id, t.to_location_id, t.reference_job_id, t.reference_work_order_id,
+      t.status_after_id, t.performed_by, t.performed_at, t.remark,
+      q.qr_value, u.full_name AS user_name, s.status_name AS status_after_name,
+      l.location_name AS to_location_name, j2.job_no, wo.work_order_no,
+      COALESCE(p.part_no, b.box_code, j.job_no, wo2.work_order_no) AS entity_code,
+      COALESCE(p.part_name, b.description, j.job_name, wo2.description, wo2.work_order_no) AS entity_name
+    FROM stock_transactions t
+    JOIN qr_codes q ON q.id = t.qr_code_id
+    JOIN users u ON u.id = t.performed_by
+    LEFT JOIN item_status s ON s.id = t.status_after_id
+    LEFT JOIN locations l ON l.id = t.to_location_id
+    LEFT JOIN jobs j2 ON j2.id = t.reference_job_id
+    LEFT JOIN work_orders wo ON wo.id = t.reference_work_order_id
+    LEFT JOIN parts p ON t.entity_type = 'PART' AND p.id = t.entity_id
+    LEFT JOIN boxes b ON t.entity_type = 'BOX' AND b.id = t.entity_id
+    LEFT JOIN jobs j ON t.entity_type = 'JOB' AND j.id = t.entity_id
+    LEFT JOIN work_orders wo2 ON t.entity_type = 'WORK_ORDER' AND wo2.id = t.entity_id
+    ${conditions.length ? `WHERE ${conditions.join(" AND ")}` : ""}
+    ORDER BY t.performed_at DESC
+  `;
+
+  const result = await db.query(query, params);
+  return result.rows.map(row => ({
+    id: row.id,
+    transactionNo: row.transaction_no,
+    qrCodeId: row.qr_code_id,
+    entityType: row.entity_type,
+    entityId: row.entity_id,
+    actionType: row.action_type,
+    qty: Number(row.qty),
+    fromLocationId: row.from_location_id,
+    toLocationId: row.to_location_id,
+    referenceJobId: row.reference_job_id,
+    referenceWorkOrderId: row.reference_work_order_id,
+    statusAfterId: row.status_after_id,
+    performedBy: row.performed_by,
+    performedAt: row.performed_at,
+    remark: row.remark,
+    qrValue: row.qr_value,
+    entityCode: row.entity_code || "-",
+    entityName: row.entity_name || "-",
+    userName: row.user_name || "-",
+    statusAfterName: row.status_after_name || "-",
+    toLocationName: row.to_location_name || "-",
+    jobNo: row.job_no || "",
+    workOrderNo: row.work_order_no || ""
+  }));
+}
+
+async function getDashboard() {
+  if (!db) {
+    const store = readStore();
+    return {
+      balances: computeDashboard(store),
+      recentTransactions: store.stockTransactions
+        .slice()
+        .sort((a, b) => new Date(b.performedAt) - new Date(a.performedAt))
+        .slice(0, 5)
+        .map(item => enrichTransaction(store, item))
+    };
+  }
+
+  const balancesResult = await db.query(`
+    SELECT
+      sb.id, sb.entity_type, sb.entity_id, sb.qty_on_hand, sb.updated_at,
+      s.status_name AS current_status, l.location_name AS current_location,
+      p.unit, p.min_stock,
+      COALESCE(p.part_no, b.box_code, j.job_no, wo.work_order_no) AS code,
+      COALESCE(p.part_name, b.description, j.job_name, wo.description, wo.work_order_no) AS name
+    FROM stock_balances sb
+    LEFT JOIN item_status s ON s.id = sb.current_status_id
+    LEFT JOIN locations l ON l.id = sb.current_location_id
+    LEFT JOIN parts p ON sb.entity_type = 'PART' AND p.id = sb.entity_id
+    LEFT JOIN boxes b ON sb.entity_type = 'BOX' AND b.id = sb.entity_id
+    LEFT JOIN jobs j ON sb.entity_type = 'JOB' AND j.id = sb.entity_id
+    LEFT JOIN work_orders wo ON sb.entity_type = 'WORK_ORDER' AND wo.id = sb.entity_id
+    ORDER BY code ASC
+  `);
+
+  const recentTransactions = await getTransactions({});
+  return {
+    balances: balancesResult.rows.map(row => ({
+      id: row.id,
+      entityType: row.entity_type,
+      entityId: row.entity_id,
+      code: row.code || "-",
+      name: row.name || "-",
+      qtyOnHand: Number(row.qty_on_hand),
+      currentStatus: row.current_status || "-",
+      currentLocation: row.current_location || "-",
+      updatedAt: row.updated_at,
+      unit: row.unit || "",
+      minStock: Number(row.min_stock || 0),
+      isLowStock: row.entity_type === "PART" ? Number(row.qty_on_hand) <= Number(row.min_stock || 0) : false
+    })),
+    recentTransactions: recentTransactions.slice(0, 5)
+  };
+}
+
+async function createTransaction(payload) {
+  if (!db) {
+    return handleCreateTransactionFile(readStore(), payload);
+  }
+
+  const actionType = String(payload.actionType || "").toUpperCase();
+  const qty = Number(payload.qty);
+  if (!["RECEIVE", "ISSUE"].includes(actionType)) {
+    return { statusCode: 400, payload: { error: "Action must be RECEIVE or ISSUE." } };
+  }
+  if (!Number.isFinite(qty) || qty <= 0) {
+    return { statusCode: 400, payload: { error: "Quantity must be greater than zero." } };
+  }
+
+  const client = await db.connect();
+  try {
+    await client.query("BEGIN");
+
+    const qrResult = await client.query("SELECT id, qr_value, entity_type, entity_id FROM qr_codes WHERE qr_value = $1 AND is_active = TRUE", [payload.qrValue]);
+    if (qrResult.rowCount === 0) {
+      await client.query("ROLLBACK");
+      return { statusCode: 400, payload: { error: "QR code not found." } };
+    }
+    const qr = qrResult.rows[0];
+
+    const userResult = await client.query("SELECT id FROM users WHERE id = $1 AND is_active = TRUE", [Number(payload.userId)]);
+    if (userResult.rowCount === 0) {
+      await client.query("ROLLBACK");
+      return { statusCode: 400, payload: { error: "User not found." } };
+    }
+
+    const statusCode = actionType === "RECEIVE" ? "IN_STOCK" : "ISSUED";
+    const statusResult = await client.query("SELECT id FROM item_status WHERE status_code = $1", [statusCode]);
+    const status = statusResult.rows[0];
+
+    const locationCode = String(payload.toLocationCode || (actionType === "RECEIVE" ? "A01" : "PROD")).toUpperCase();
+    const locationResult = await client.query(
+      `INSERT INTO locations (location_code, location_name)
+       VALUES ($1, $2)
+       ON CONFLICT (location_code)
+       DO UPDATE SET location_name = EXCLUDED.location_name
+       RETURNING id`,
+      [locationCode, locationCode]
+    );
+    const location = locationResult.rows[0];
+
+    const balanceResult = await client.query(
+      `SELECT id, qty_on_hand, current_location_id
+       FROM stock_balances
+       WHERE entity_type = $1 AND entity_id = $2
+       FOR UPDATE`,
+      [qr.entity_type, qr.entity_id]
+    );
+    const currentBalance = balanceResult.rows[0];
+    const currentQty = currentBalance ? Number(currentBalance.qty_on_hand) : 0;
+    if (actionType === "ISSUE" && currentQty < qty) {
+      await client.query("ROLLBACK");
+      return { statusCode: 400, payload: { error: `Not enough stock. Current balance is ${currentQty}.` } };
+    }
+
+    const nextIdResult = await client.query("SELECT nextval(pg_get_serial_sequence('stock_transactions', 'id')) AS next_id");
+    const transactionId = Number(nextIdResult.rows[0].next_id);
+    const transactionNo = `TXN-${String(transactionId).padStart(5, "0")}`;
+    const now = new Date().toISOString();
+
+    await client.query(
+      `INSERT INTO stock_transactions
+       (id, transaction_no, qr_code_id, entity_type, entity_id, action_type, qty, from_location_id, to_location_id, reference_job_id, reference_work_order_id, status_after_id, performed_by, performed_at, remark)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)`,
+      [
+        transactionId,
+        transactionNo,
+        qr.id,
+        qr.entity_type,
+        qr.entity_id,
+        actionType,
+        qty,
+        actionType === "ISSUE" && currentBalance ? currentBalance.current_location_id : null,
+        location.id,
+        payload.jobId ? Number(payload.jobId) : null,
+        payload.workOrderId ? Number(payload.workOrderId) : null,
+        status ? status.id : null,
+        Number(payload.userId),
+        now,
+        String(payload.remark || "").trim()
+      ]
+    );
+
+    const newQty = actionType === "RECEIVE" ? currentQty + qty : currentQty - qty;
+    await client.query(
+      `INSERT INTO stock_balances
+       (entity_type, entity_id, qty_on_hand, current_status_id, current_location_id, last_transaction_id, updated_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)
+       ON CONFLICT (entity_type, entity_id)
+       DO UPDATE SET
+         qty_on_hand = EXCLUDED.qty_on_hand,
+         current_status_id = EXCLUDED.current_status_id,
+         current_location_id = EXCLUDED.current_location_id,
+         last_transaction_id = EXCLUDED.last_transaction_id,
+         updated_at = EXCLUDED.updated_at`,
+      [qr.entity_type, qr.entity_id, newQty, status ? status.id : null, location.id, transactionId, now]
+    );
+
+    await client.query("COMMIT");
+    const transactions = await getTransactions({ q: payload.qrValue });
+    const transaction = transactions.find(item => item.transactionNo === transactionNo);
+    return {
+      statusCode: 201,
+      payload: {
+        message: "Transaction saved.",
+        transaction,
+        balance: {
+          entityType: qr.entity_type,
+          entityId: qr.entity_id,
+          qtyOnHand: newQty,
+          currentStatusId: status ? status.id : null,
+          currentLocationId: location.id,
+          lastTransactionId: transactionId,
+          updatedAt: now
+        }
+      }
+    };
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
+const server = http.createServer(async (req, res) => {
+  const requestUrl = new URL(req.url, `http://${req.headers.host}`);
+
+  if (req.method === "GET" && requestUrl.pathname === "/health") {
+    json(res, 200, { ok: true, storage: db ? "postgres" : "file" });
+    return;
+  }
+
+  if (req.method === "GET" && requestUrl.pathname === "/api/bootstrap") {
+    try {
+      json(res, 200, await getBootstrapData());
+    } catch (error) {
+      json(res, 500, { error: error.message || "Unexpected server error." });
+    }
+    return;
+  }
+
+  if (req.method === "GET" && requestUrl.pathname === "/api/transactions") {
+    try {
+      const q = requestUrl.searchParams.get("q");
+      const action = requestUrl.searchParams.get("action");
+      json(res, 200, await getTransactions({ q, action }));
+    } catch (error) {
+      json(res, 500, { error: error.message || "Unexpected server error." });
+    }
     return;
   }
 
   if (req.method === "POST" && requestUrl.pathname === "/api/transactions") {
     try {
-      const store = readStore();
       const body = await parseBody(req);
-      const result = handleCreateTransaction(store, body);
+      const result = await createTransaction(body);
       json(res, result.statusCode, result.payload);
     } catch (error) {
       json(res, 500, { error: error.message || "Unexpected server error." });
@@ -362,22 +841,15 @@ const server = http.createServer(async (req, res) => {
   }
 
   if (req.method === "GET" && requestUrl.pathname === "/api/dashboard") {
-    const store = readStore();
-    json(res, 200, {
-      balances: computeDashboard(store),
-      recentTransactions: store.stockTransactions
-        .slice()
-        .sort((a, b) => new Date(b.performedAt) - new Date(a.performedAt))
-        .slice(0, 5)
-        .map(item => enrichTransaction(store, item))
-    });
+    try {
+      json(res, 200, await getDashboard());
+    } catch (error) {
+      json(res, 500, { error: error.message || "Unexpected server error." });
+    }
     return;
   }
 
-  const publicPath = requestUrl.pathname === "/"
-    ? path.join(PUBLIC_DIR, "index.html")
-    : path.join(PUBLIC_DIR, requestUrl.pathname);
-
+  const publicPath = requestUrl.pathname === "/" ? path.join(PUBLIC_DIR, "index.html") : path.join(PUBLIC_DIR, requestUrl.pathname);
   if (publicPath.startsWith(PUBLIC_DIR)) {
     sendFile(res, publicPath);
     return;
@@ -387,7 +859,13 @@ const server = http.createServer(async (req, res) => {
   res.end("Not found");
 });
 
-ensureStore();
-server.listen(PORT, () => {
-  console.log(`Stock QR MVP is running at http://localhost:${PORT}`);
-});
+initializeDatabase()
+  .then(() => {
+    server.listen(PORT, () => {
+      console.log(`Stock QR MVP is running at http://localhost:${PORT} (${db ? "postgres" : "file"})`);
+    });
+  })
+  .catch(error => {
+    console.error("Failed to initialize storage", error);
+    process.exit(1);
+  });

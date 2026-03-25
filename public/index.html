@@ -21,14 +21,13 @@
             <div>
               <h1>เลือกการใช้งาน</h1>
               <p class="subtitle">
-                หลังจากล็อกอินแล้ว คุณสามารถเลือกเข้าหน้ารับเข้า-เบิกออก ดูประวัติการเคลื่อนไหว
-                และตรวจสอบคงเหลือได้จากหน้านี้
+                ระบบติดตามงานด้วย QR สำหรับรับเข้า เบิกออก จัดการข้อมูลหลัก และดูคงเหลือย้อนหลังได้จากหน้าเดียว
               </p>
             </div>
 
             <div class="hero-stats">
               <article class="hero-stat">
-                <span>ข่าวสารล่าสุด</span>
+                <span>รายการล่าสุด</span>
                 <strong id="hero-recent-count">0</strong>
               </article>
               <article class="hero-stat">
@@ -51,23 +50,23 @@
       <section class="menu-grid">
         <article class="menu-card">
           <div class="menu-icon">◎</div>
-          <h2>เข้าหน้ารับเข้า-เบิกออก</h2>
-          <p>เปิดหน้าใช้งานสแกน QR เพื่อบันทึกรับเข้า เบิกออก และอ้างอิงงานหรือใบงาน</p>
+          <h2>สแกนรับเข้า-เบิกออก</h2>
+          <p>เปิดหน้าสแกน QR เพื่อบันทึกรับเข้า เบิกออก และอ้างอิงงานหรือใบงานได้ทันที</p>
           <button class="menu-action" data-view-target="scan" type="button">ไปหน้าสแกน</button>
         </article>
 
         <article class="menu-card">
           <div class="menu-icon">▦</div>
-          <h2>อ่านประวัติรายการ</h2>
-          <p>ติดตามย้อนหลังว่าใครรับ ใครเบิก เมื่อไหร่ ค้นหาตาม QR, Part, งาน และคนทำได้</p>
+          <h2>ประวัติการใช้งาน</h2>
+          <p>ค้นหาย้อนหลังว่าใครทำรายการ เมื่อไหร่ กับงานไหน พร้อม export ออก Excel ได้</p>
           <button class="menu-action" data-view-target="history" type="button">ไปหน้าประวัติ</button>
         </article>
 
         <article class="menu-card">
-          <div class="menu-icon">▥</div>
-          <h2>Stock summary</h2>
-          <p>ดูยอดคงเหลือ สถานะล่าสุด ตำแหน่งเก็บ และรายการที่ต่ำกว่า minimum stock</p>
-          <button class="menu-action" data-view-target="dashboard" type="button">Open stock summary</button>
+          <div class="menu-icon">▤</div>
+          <h2>Master Data</h2>
+          <p>จัดการ Part, Box, งาน, ใบงาน และ QR จากหน้าจอเดียว พร้อมอัปขึ้นฐานข้อมูลออนไลน์</p>
+          <button class="menu-action" data-view-target="master" type="button">เปิด Master Data</button>
         </article>
       </section>
 
@@ -75,6 +74,7 @@
         <button class="tab is-active" data-view="scan">สแกน / บันทึก</button>
         <button class="tab" data-view="history">ประวัติ</button>
         <button class="tab" data-view="dashboard">คงเหลือ</button>
+        <button class="tab" data-view="master">Master Data</button>
       </nav>
 
       <main>
@@ -152,6 +152,7 @@
                 <h2>ประวัติการเคลื่อนไหว</h2>
                 <p>เช็กย้อนหลังได้ว่าใครรับ ใครเบิก เมื่อไหร่ และอ้างอิงงานไหน</p>
               </div>
+              <a class="secondary-button export-link" href="/api/export/transactions.csv">Export Excel</a>
             </div>
 
             <div class="toolbar">
@@ -177,6 +178,7 @@
                 <h2>คงเหลือปัจจุบัน</h2>
                 <p>ดูยอดคงเหลือ สถานะล่าสุด ตำแหน่งเก็บ และรายการต่ำกว่า min stock</p>
               </div>
+              <a class="secondary-button export-link" href="/api/export/balances.csv">Export Excel</a>
             </div>
             <div id="balance-list" class="list"></div>
           </div>
@@ -190,6 +192,57 @@
             </div>
             <div id="recent-list" class="list"></div>
           </div>
+        </section>
+
+        <section class="view" id="view-master">
+          <div class="panel">
+            <div class="panel-head">
+              <div>
+                <h2>จัดการ Master Data</h2>
+                <p>เพิ่มข้อมูลหลักเข้าสู่ระบบ และดูรายการล่าสุดของแต่ละประเภท</p>
+              </div>
+            </div>
+
+            <form id="master-form" class="grid-form">
+              <label>
+                ประเภทข้อมูล
+                <select id="masterEntity" name="masterEntity">
+                  <option value="parts">Part</option>
+                  <option value="boxes">Box</option>
+                  <option value="jobs">งาน</option>
+                  <option value="work-orders">ใบงาน</option>
+                  <option value="qrs">QR</option>
+                </select>
+              </label>
+
+              <label>
+                รหัส
+                <input id="masterCode" name="masterCode" placeholder="เช่น PT-3001 / JOB-001 / QR-ABC" required />
+              </label>
+
+              <label>
+                ชื่อ / รายละเอียด
+                <input id="masterName" name="masterName" placeholder="ชื่อ Part หรือรายละเอียด" required />
+              </label>
+
+              <label>
+                ค่าเพิ่ม 1
+                <input id="masterExtra1" name="masterExtra1" placeholder="Part: Unit | Job: Customer | QR: Entity Type" />
+              </label>
+
+              <label>
+                ค่าเพิ่ม 2
+                <input id="masterExtra2" name="masterExtra2" placeholder="Part: Min Stock | Work Order: Planned Qty | QR: Entity Id" />
+              </label>
+
+              <div class="actions full">
+                <button class="primary-button" type="submit">บันทึก Master Data</button>
+                <p id="master-message" class="form-message"></p>
+              </div>
+            </form>
+          </div>
+
+          <div class="master-grid" id="master-grid"></div>
         </section>
       </main>
     </div>

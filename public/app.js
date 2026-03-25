@@ -2,7 +2,14 @@ const state = {
   bootstrap: null,
   scannerStream: null,
   detector: null,
-  scanLoop: null
+  scanLoop: null,
+  masters: {
+    parts: [],
+    boxes: [],
+    jobs: [],
+    "work-orders": [],
+    qrs: []
+  }
 };
 
 function $(id) {
@@ -10,10 +17,8 @@ function $(id) {
 }
 
 async function api(url, options = {}) {
-  const response = await fetch(url, {
-    headers: { "Content-Type": "application/json" },
-    ...options
-  });
+  const headers = { "Content-Type": "application/json" };
+  const response = await fetch(url, { headers, ...options });
   const data = await response.json();
   if (!response.ok) {
     throw new Error(data.error || "Request failed.");
@@ -90,8 +95,8 @@ function renderDashboard(data) {
   const lowStock = data.balances.filter(item => item.isLowStock).length;
   const totalQty = data.balances.reduce((sum, item) => sum + Number(item.qtyOnHand), 0);
   const recentCount = data.recentTransactions.length;
-
   const partCount = data.balances.filter(item => item.entityType === "PART").length;
+
   $("hero-recent-count").textContent = String(recentCount);
   $("hero-part-count").textContent = String(partCount);
   $("hero-balance-count").textContent = String(totalBalances);
@@ -143,6 +148,55 @@ function renderDashboard(data) {
     : '<div class="empty">ยังไม่มีรายการล่าสุด</div>';
 }
 
+function masterTitle(entity) {
+  return {
+    parts: "Part",
+    boxes: "Box",
+    jobs: "งาน",
+    "work-orders": "ใบงาน",
+    qrs: "QR"
+  }[entity];
+}
+
+function renderMasters() {
+  $("master-grid").innerHTML = Object.entries(state.masters).map(([entity, rows]) => `
+    <section class="panel compact-panel">
+      <div class="panel-head">
+        <div>
+          <h2>${masterTitle(entity)}</h2>
+          <p>ล่าสุด ${rows.length} รายการ</p>
+        </div>
+      </div>
+      <div class="list">
+        ${rows.length
+          ? rows.slice(0, 6).map(item => `
+            <article class="list-item">
+              <div class="list-top">
+                <strong>${item.code}</strong>
+                <span>#${item.id}</span>
+              </div>
+              <div>${item.name || "-"}</div>
+              <div class="list-meta">
+                <span>Extra 1: ${item.extra1 ?? "-"}</span>
+                <span>Extra 2: ${item.extra2 ?? "-"}</span>
+              </div>
+            </article>
+          `).join("")
+          : '<div class="empty">ยังไม่มีข้อมูล</div>'}
+      </div>
+    </section>
+  `).join("");
+}
+
+async function refreshMasters() {
+  const entities = Object.keys(state.masters);
+  const results = await Promise.all(entities.map(entity => api(`/api/master/${entity}`)));
+  entities.forEach((entity, index) => {
+    state.masters[entity] = results[index];
+  });
+  renderMasters();
+}
+
 async function refreshHistory() {
   const params = new URLSearchParams();
   const q = $("history-search").value.trim();
@@ -185,9 +239,35 @@ async function submitTransaction(event) {
     if (state.bootstrap?.jobs[0]) $("jobId").value = state.bootstrap.jobs[0].id;
     if (state.bootstrap?.workOrders[0]) $("workOrderId").value = state.bootstrap.workOrders[0].id;
     $("qty").value = 1;
-    await Promise.all([refreshHistory(), refreshDashboard()]);
+    await Promise.all([loadBootstrap(), refreshHistory(), refreshDashboard(), refreshMasters()]);
   } catch (error) {
     $("form-message").textContent = error.message;
+  }
+}
+
+async function submitMaster(event) {
+  event.preventDefault();
+  $("master-message").textContent = "กำลังบันทึก...";
+
+  const entity = $("masterEntity").value;
+  const payload = {
+    code: $("masterCode").value.trim(),
+    name: $("masterName").value.trim(),
+    extra1: $("masterExtra1").value.trim(),
+    extra2: $("masterExtra2").value.trim()
+  };
+
+  try {
+    await api(`/api/master/${entity}`, {
+      method: "POST",
+      body: JSON.stringify(payload)
+    });
+    $("master-message").textContent = "บันทึก Master Data แล้ว";
+    $("master-form").reset();
+    $("masterEntity").value = entity;
+    await Promise.all([loadBootstrap(), refreshMasters()]);
+  } catch (error) {
+    $("master-message").textContent = error.message;
   }
 }
 
@@ -202,7 +282,7 @@ function activateView(viewName) {
 
 async function startScanner() {
   if (!("BarcodeDetector" in window)) {
-    $("form-message").textContent = "อุปกรณ์นี้ไม่รองรับ BarcodeDetector ใช้การกรอกรหัสแทนได้ทันที";
+    $("form-message").textContent = "อุปกรณ์นี้ไม่รองรับ BarcodeDetector ใช้การกรอกรหัสแทนได้";
     return;
   }
   if (state.scannerStream) {
@@ -262,6 +342,7 @@ function bindEvents() {
     button.addEventListener("click", () => activateView(button.dataset.viewTarget));
   });
   $("transaction-form").addEventListener("submit", submitTransaction);
+  $("master-form").addEventListener("submit", submitMaster);
   $("history-refresh").addEventListener("click", refreshHistory);
   $("history-search").addEventListener("input", refreshHistory);
   $("history-action").addEventListener("change", refreshHistory);
@@ -271,9 +352,10 @@ function bindEvents() {
 async function init() {
   bindEvents();
   await loadBootstrap();
-  await Promise.all([refreshHistory(), refreshDashboard()]);
+  await Promise.all([refreshHistory(), refreshDashboard(), refreshMasters()]);
 }
 
 init().catch(error => {
-  $("form-message").textContent = error.message;
+  const el = $("form-message");
+  if (el) el.textContent = error.message;
 });

@@ -330,6 +330,12 @@ textarea {
   margin-bottom: 14px;
 }
 
+.button-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
 .export-link {
   display: inline-flex;
   align-items: center;
@@ -337,9 +343,24 @@ textarea {
   text-decoration: none;
 }
 
+.small-button {
+  min-height: 38px;
+  padding: 0 14px;
+}
+
+.danger-button {
+  color: #9d3d2f;
+  border-color: rgba(157, 61, 47, 0.2);
+  background: rgba(255, 240, 238, 0.92);
+}
+
 .toolbar input {
   flex: 1;
   min-width: 220px;
+}
+
+#master-search {
+  max-width: 340px;
 }
 
 .list {

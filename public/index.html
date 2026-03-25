@@ -152,7 +152,10 @@
                 <h2>ประวัติการเคลื่อนไหว</h2>
                 <p>เช็กย้อนหลังได้ว่าใครรับ ใครเบิก เมื่อไหร่ และอ้างอิงงานไหน</p>
               </div>
-              <a class="secondary-button export-link" href="/api/export/transactions.csv">Export Excel</a>
+              <div class="button-row">
+                <a class="secondary-button export-link" href="/api/export/transactions.xlsx">Export XLSX</a>
+                <a class="secondary-button export-link" href="/api/export/transactions.csv">Export CSV</a>
+              </div>
             </div>
 
             <div class="toolbar">
@@ -178,7 +181,10 @@
                 <h2>คงเหลือปัจจุบัน</h2>
                 <p>ดูยอดคงเหลือ สถานะล่าสุด ตำแหน่งเก็บ และรายการต่ำกว่า min stock</p>
               </div>
-              <a class="secondary-button export-link" href="/api/export/balances.csv">Export Excel</a>
+              <div class="button-row">
+                <a class="secondary-button export-link" href="/api/export/balances.xlsx">Export XLSX</a>
+                <a class="secondary-button export-link" href="/api/export/balances.csv">Export CSV</a>
+              </div>
             </div>
             <div id="balance-list" class="list"></div>
           </div>
@@ -201,6 +207,7 @@
                 <h2>จัดการ Master Data</h2>
                 <p>เพิ่มข้อมูลหลักเข้าสู่ระบบ และดูรายการล่าสุดของแต่ละประเภท</p>
               </div>
+              <input id="master-search" placeholder="ค้นหา code / name ใน master data" />
             </div>
 
             <form id="master-form" class="grid-form">

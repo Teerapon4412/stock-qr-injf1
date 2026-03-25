@@ -3,6 +3,8 @@ const state = {
   scannerStream: null,
   detector: null,
   scanLoop: null,
+  masterSearch: "",
+  masterEditing: null,
   masters: {
     parts: [],
     boxes: [],
@@ -159,17 +161,26 @@ function masterTitle(entity) {
 }
 
 function renderMasters() {
-  $("master-grid").innerHTML = Object.entries(state.masters).map(([entity, rows]) => `
+  const needle = state.masterSearch.trim().toLowerCase();
+  $("master-grid").innerHTML = Object.entries(state.masters).map(([entity, rows]) => {
+    const filtered = rows.filter(item => {
+      if (!needle) return true;
+      return [item.code, item.name, item.extra1, item.extra2]
+        .filter(value => value !== null && value !== undefined)
+        .some(value => String(value).toLowerCase().includes(needle));
+    });
+
+    return `
     <section class="panel compact-panel">
       <div class="panel-head">
         <div>
           <h2>${masterTitle(entity)}</h2>
-          <p>ล่าสุด ${rows.length} รายการ</p>
+          <p>พบ ${filtered.length} รายการ</p>
         </div>
       </div>
       <div class="list">
-        ${rows.length
-          ? rows.slice(0, 6).map(item => `
+        ${filtered.length
+          ? filtered.slice(0, 20).map(item => `
             <article class="list-item">
               <div class="list-top">
                 <strong>${item.code}</strong>
@@ -180,12 +191,24 @@ function renderMasters() {
                 <span>Extra 1: ${item.extra1 ?? "-"}</span>
                 <span>Extra 2: ${item.extra2 ?? "-"}</span>
               </div>
+              <div class="button-row">
+                <button class="secondary-button small-button" type="button" data-edit-entity="${entity}" data-edit-id="${item.id}">แก้ไข</button>
+                <button class="secondary-button small-button danger-button" type="button" data-delete-entity="${entity}" data-delete-id="${item.id}">ลบ</button>
+              </div>
             </article>
           `).join("")
           : '<div class="empty">ยังไม่มีข้อมูล</div>'}
       </div>
     </section>
-  `).join("");
+  `;
+  }).join("");
+
+  document.querySelectorAll("[data-edit-entity]").forEach(button => {
+    button.addEventListener("click", () => beginEditMaster(button.dataset.editEntity, Number(button.dataset.editId)));
+  });
+  document.querySelectorAll("[data-delete-entity]").forEach(button => {
+    button.addEventListener("click", () => removeMaster(button.dataset.deleteEntity, Number(button.dataset.deleteId)));
+  });
 }
 
 async function refreshMasters() {
@@ -258,13 +281,51 @@ async function submitMaster(event) {
   };
 
   try {
-    await api(`/api/master/${entity}`, {
-      method: "POST",
-      body: JSON.stringify(payload)
-    });
-    $("master-message").textContent = "บันทึก Master Data แล้ว";
+    if (state.masterEditing) {
+      await api(`/api/master/${entity}/${state.masterEditing.id}`, {
+        method: "PUT",
+        body: JSON.stringify(payload)
+      });
+      $("master-message").textContent = "อัปเดต Master Data แล้ว";
+    } else {
+      await api(`/api/master/${entity}`, {
+        method: "POST",
+        body: JSON.stringify(payload)
+      });
+      $("master-message").textContent = "บันทึก Master Data แล้ว";
+    }
     $("master-form").reset();
     $("masterEntity").value = entity;
+    state.masterEditing = null;
+    await Promise.all([loadBootstrap(), refreshMasters()]);
+  } catch (error) {
+    $("master-message").textContent = error.message;
+  }
+}
+
+function beginEditMaster(entity, id) {
+  const item = state.masters[entity].find(row => row.id === id);
+  if (!item) return;
+  state.masterEditing = { entity, id };
+  $("masterEntity").value = entity;
+  $("masterCode").value = item.code || "";
+  $("masterName").value = item.name || "";
+  $("masterExtra1").value = item.extra1 ?? "";
+  $("masterExtra2").value = item.extra2 ?? "";
+  $("master-message").textContent = `กำลังแก้ไข ${masterTitle(entity)} #${id}`;
+  activateView("master");
+}
+
+async function removeMaster(entity, id) {
+  const ok = window.confirm(`ยืนยันการลบ ${masterTitle(entity)} #${id} ?`);
+  if (!ok) return;
+  try {
+    await api(`/api/master/${entity}/${id}`, { method: "DELETE" });
+    $("master-message").textContent = `ลบ ${masterTitle(entity)} #${id} แล้ว`;
+    if (state.masterEditing?.entity === entity && state.masterEditing?.id === id) {
+      state.masterEditing = null;
+      $("master-form").reset();
+    }
     await Promise.all([loadBootstrap(), refreshMasters()]);
   } catch (error) {
     $("master-message").textContent = error.message;
@@ -343,6 +404,10 @@ function bindEvents() {
   });
   $("transaction-form").addEventListener("submit", submitTransaction);
   $("master-form").addEventListener("submit", submitMaster);
+  $("master-search").addEventListener("input", event => {
+    state.masterSearch = event.target.value;
+    renderMasters();
+  });
   $("history-refresh").addEventListener("click", refreshHistory);
   $("history-search").addEventListener("input", refreshHistory);
   $("history-action").addEventListener("change", refreshHistory);

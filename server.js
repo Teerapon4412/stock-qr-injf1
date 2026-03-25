@@ -3,6 +3,7 @@ const fs = require("fs");
 const path = require("path");
 const { URL } = require("url");
 const { Pool } = require("pg");
+const XLSX = require("xlsx");
 
 const PORT = process.env.PORT || 3000;
 const ROOT = __dirname;
@@ -826,6 +827,18 @@ function csvResponse(res, filename, rows) {
   res.end(content);
 }
 
+function xlsxResponse(res, filename, sheetName, rows) {
+  const worksheet = XLSX.utils.aoa_to_sheet(rows);
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
+  const buffer = XLSX.write(workbook, { type: "buffer", bookType: "xlsx" });
+  res.writeHead(200, {
+    "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    "Content-Disposition": `attachment; filename="${filename}"`
+  });
+  res.end(buffer);
+}
+
 function normalizeMasterRow(entity, row) {
   if (entity === "parts") {
     return {
@@ -946,6 +959,124 @@ async function createMasterData(entity, payload) {
   return normalizeMasterRow(entity, result.rows[0]);
 }
 
+async function updateMasterData(entity, id, payload) {
+  const numericId = Number(id);
+  if (!db) {
+    const store = readStore();
+    const key = parseMasterEntity(entity);
+    const index = store[key].findIndex(item => item.id === numericId);
+    if (index === -1) {
+      throw new Error("Master data not found.");
+    }
+
+    if (entity === "parts") {
+      store[key][index] = {
+        ...store[key][index],
+        partNo: payload.code,
+        partName: payload.name,
+        unit: payload.extra1 || "PCS",
+        minStock: Number(payload.extra2 || 0)
+      };
+    } else if (entity === "boxes") {
+      store[key][index] = {
+        ...store[key][index],
+        boxCode: payload.code,
+        description: payload.name || "",
+        jobId: payload.extra1 ? Number(payload.extra1) : null,
+        workOrderId: payload.extra2 ? Number(payload.extra2) : null
+      };
+    } else if (entity === "jobs") {
+      store[key][index] = {
+        ...store[key][index],
+        jobNo: payload.code,
+        jobName: payload.name,
+        customerName: payload.extra1 || "",
+        description: payload.extra2 || ""
+      };
+    } else if (entity === "work-orders") {
+      store[key][index] = {
+        ...store[key][index],
+        workOrderNo: payload.code,
+        description: payload.name || "",
+        jobId: Number(payload.extra1),
+        plannedQty: Number(payload.extra2 || 0)
+      };
+    } else {
+      store[key][index] = {
+        ...store[key][index],
+        qrValue: payload.code,
+        entityType: String(payload.name || "").toUpperCase(),
+        entityId: Number(payload.extra1),
+        isActive: payload.extra2 !== "false"
+      };
+    }
+
+    writeStore(store);
+    return normalizeMasterRow(entity, store[key][index]);
+  }
+
+  let result;
+  if (entity === "parts") {
+    result = await db.query(
+      "UPDATE parts SET part_no = $1, part_name = $2, unit = $3, min_stock = $4, updated_at = CURRENT_TIMESTAMP WHERE id = $5 RETURNING id, part_no, part_name, unit, min_stock",
+      [payload.code, payload.name, payload.extra1 || "PCS", Number(payload.extra2 || 0), numericId]
+    );
+  } else if (entity === "boxes") {
+    result = await db.query(
+      "UPDATE boxes SET box_code = $1, description = $2, job_id = $3, work_order_id = $4, updated_at = CURRENT_TIMESTAMP WHERE id = $5 RETURNING id, box_code, description, job_id, work_order_id",
+      [payload.code, payload.name || "", payload.extra1 ? Number(payload.extra1) : null, payload.extra2 ? Number(payload.extra2) : null, numericId]
+    );
+  } else if (entity === "jobs") {
+    result = await db.query(
+      "UPDATE jobs SET job_no = $1, job_name = $2, customer_name = $3, description = $4, updated_at = CURRENT_TIMESTAMP WHERE id = $5 RETURNING id, job_no, job_name, customer_name, description",
+      [payload.code, payload.name, payload.extra1 || "", payload.extra2 || "", numericId]
+    );
+  } else if (entity === "work-orders") {
+    result = await db.query(
+      "UPDATE work_orders SET work_order_no = $1, description = $2, job_id = $3, planned_qty = $4, updated_at = CURRENT_TIMESTAMP WHERE id = $5 RETURNING id, work_order_no, description, job_id, planned_qty",
+      [payload.code, payload.name || "", Number(payload.extra1), Number(payload.extra2 || 0), numericId]
+    );
+  } else {
+    result = await db.query(
+      "UPDATE qr_codes SET qr_value = $1, entity_type = $2, entity_id = $3, is_active = $4 WHERE id = $5 RETURNING id, qr_value, entity_type, entity_id, is_active",
+      [payload.code, String(payload.name || "").toUpperCase(), Number(payload.extra1), payload.extra2 !== "false", numericId]
+    );
+  }
+
+  if (result.rowCount === 0) {
+    throw new Error("Master data not found.");
+  }
+  return normalizeMasterRow(entity, result.rows[0]);
+}
+
+async function deleteMasterData(entity, id) {
+  const numericId = Number(id);
+  if (!db) {
+    const store = readStore();
+    const key = parseMasterEntity(entity);
+    const index = store[key].findIndex(item => item.id === numericId);
+    if (index === -1) {
+      throw new Error("Master data not found.");
+    }
+    store[key].splice(index, 1);
+    writeStore(store);
+    return { success: true };
+  }
+
+  const tables = {
+    parts: "parts",
+    boxes: "boxes",
+    jobs: "jobs",
+    "work-orders": "work_orders",
+    qrs: "qr_codes"
+  };
+  const result = await db.query(`DELETE FROM ${tables[entity]} WHERE id = $1 RETURNING id`, [numericId]);
+  if (result.rowCount === 0) {
+    throw new Error("Master data not found.");
+  }
+  return { success: true };
+}
+
 const server = http.createServer(async (req, res) => {
   const requestUrl = new URL(req.url, `http://${req.headers.host}`);
 
@@ -1024,6 +1155,31 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  if ((req.method === "PUT" || req.method === "DELETE") && requestUrl.pathname.startsWith("/api/master/")) {
+    try {
+      const parts = requestUrl.pathname.split("/").filter(Boolean);
+      const entity = parts[2];
+      const id = parts[3];
+      if (!parseMasterEntity(entity) || !id) {
+        json(res, 404, { error: "Master entity not found." });
+        return;
+      }
+
+      if (req.method === "PUT") {
+        const body = await parseBody(req);
+        json(res, 200, await updateMasterData(entity, id, body));
+      } else {
+        json(res, 200, await deleteMasterData(entity, id));
+      }
+    } catch (error) {
+      const message = error.code === "23503"
+        ? "ลบข้อมูลนี้ไม่ได้ เพราะยังมีข้อมูลอื่นอ้างอิงอยู่"
+        : (error.message || "Unexpected server error.");
+      json(res, 500, { error: message });
+    }
+    return;
+  }
+
   if (req.method === "GET" && requestUrl.pathname === "/api/export/transactions.csv") {
     try {
       const rows = await getTransactions({});
@@ -1044,6 +1200,37 @@ const server = http.createServer(async (req, res) => {
     try {
       const data = await getDashboard();
       csvResponse(res, "balances.csv", [
+        ["Entity Type", "Code", "Name", "Qty On Hand", "Unit", "Status", "Location", "Updated At", "Low Stock"],
+        ...data.balances.map(item => [
+          item.entityType, item.code, item.name, item.qtyOnHand, item.unit, item.currentStatus, item.currentLocation, item.updatedAt, item.isLowStock ? "YES" : "NO"
+        ])
+      ]);
+    } catch (error) {
+      json(res, 500, { error: error.message || "Unexpected server error." });
+    }
+    return;
+  }
+
+  if (req.method === "GET" && requestUrl.pathname === "/api/export/transactions.xlsx") {
+    try {
+      const rows = await getTransactions({});
+      xlsxResponse(res, "transactions.xlsx", "Transactions", [
+        ["Transaction No", "QR", "Entity Type", "Entity Code", "Entity Name", "Action", "Qty", "Status", "User", "Job", "Work Order", "Location", "Performed At", "Remark"],
+        ...rows.map(item => [
+          item.transactionNo, item.qrValue, item.entityType, item.entityCode, item.entityName, item.actionType,
+          item.qty, item.statusAfterName, item.userName, item.jobNo, item.workOrderNo, item.toLocationName, item.performedAt, item.remark || ""
+        ])
+      ]);
+    } catch (error) {
+      json(res, 500, { error: error.message || "Unexpected server error." });
+    }
+    return;
+  }
+
+  if (req.method === "GET" && requestUrl.pathname === "/api/export/balances.xlsx") {
+    try {
+      const data = await getDashboard();
+      xlsxResponse(res, "balances.xlsx", "Balances", [
         ["Entity Type", "Code", "Name", "Qty On Hand", "Unit", "Status", "Location", "Updated At", "Low Stock"],
         ...data.balances.map(item => [
           item.entityType, item.code, item.name, item.qtyOnHand, item.unit, item.currentStatus, item.currentLocation, item.updatedAt, item.isLowStock ? "YES" : "NO"

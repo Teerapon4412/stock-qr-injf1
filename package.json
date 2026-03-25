@@ -1,0 +1,9 @@
+{
+  "name": "stock-qr-mvp",
+  "version": "1.0.0",
+  "private": true,
+  "description": "QR inventory tracking MVP for jobs, parts, boxes, and work orders.",
+  "scripts": {
+    "start": "node server.js"
+  }
+}

@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="th">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Stock QR Tracking</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div class="shell">
+      <header class="hero hero-dashboard">
+        <div class="hero-main">
+          <div class="hero-topline">
+            <span class="pill pill-welcome">Welcome</span>
+            <span class="pill pill-muted">ADMIN ACCESS</span>
+            <span class="hero-user">Administrator (ADMIN1234)</span>
+            <button class="logout-button" type="button">ออกจากระบบ</button>
+          </div>
+
+          <div class="hero-content">
+            <div>
+              <h1>เลือกการใช้งาน</h1>
+              <p class="subtitle">
+                หลังจากล็อกอินแล้ว คุณสามารถเลือกเข้าหน้ารับเข้า-เบิกออก ดูประวัติการเคลื่อนไหว
+                และตรวจสอบคงเหลือได้จากหน้านี้
+              </p>
+            </div>
+
+            <div class="hero-stats">
+              <article class="hero-stat">
+                <span>ข่าวสารล่าสุด</span>
+                <strong id="hero-recent-count">0</strong>
+              </article>
+              <article class="hero-stat">
+                <span>Part ทั้งหมด</span>
+                <strong id="hero-part-count">0</strong>
+              </article>
+              <article class="hero-stat">
+                <span>รายการคงเหลือ</span>
+                <strong id="hero-balance-count">0</strong>
+              </article>
+              <article class="hero-stat">
+                <span>โหมดใช้งาน</span>
+                <strong>ADMIN</strong>
+              </article>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <section class="menu-grid">
+        <article class="menu-card">
+          <div class="menu-icon">◎</div>
+          <h2>เข้าหน้ารับเข้า-เบิกออก</h2>
+          <p>เปิดหน้าใช้งานสแกน QR เพื่อบันทึกรับเข้า เบิกออก และอ้างอิงงานหรือใบงาน</p>
+          <button class="menu-action" data-view-target="scan" type="button">ไปหน้าสแกน</button>
+        </article>
+
+        <article class="menu-card">
+          <div class="menu-icon">▦</div>
+          <h2>อ่านประวัติรายการ</h2>
+          <p>ติดตามย้อนหลังว่าใครรับ ใครเบิก เมื่อไหร่ ค้นหาตาม QR, Part, งาน และคนทำได้</p>
+          <button class="menu-action" data-view-target="history" type="button">ไปหน้าประวัติ</button>
+        </article>
+
+        <article class="menu-card">
+          <div class="menu-icon">▥</div>
+          <h2>Stock summary</h2>
+          <p>ดูยอดคงเหลือ สถานะล่าสุด ตำแหน่งเก็บ และรายการที่ต่ำกว่า minimum stock</p>
+          <button class="menu-action" data-view-target="dashboard" type="button">Open stock summary</button>
+        </article>
+      </section>
+
+      <nav class="tabs">
+        <button class="tab is-active" data-view="scan">สแกน / บันทึก</button>
+        <button class="tab" data-view="history">ประวัติ</button>
+        <button class="tab" data-view="dashboard">คงเหลือ</button>
+      </nav>
+
+      <main>
+        <section class="view is-active" id="view-scan">
+          <div class="panel">
+            <div class="panel-head">
+              <div>
+                <h2>บันทึกรับเข้า / เบิกออก</h2>
+                <p>ใช้กล้องสแกน QR ถ้าเครื่องรองรับ หรือกรอกรหัสด้วยมือได้ทันที</p>
+              </div>
+              <button id="scan-toggle" class="secondary-button" type="button">เปิดกล้องสแกน</button>
+            </div>
+
+            <div id="scanner-wrap" class="scanner-wrap hidden">
+              <video id="scanner" playsinline></video>
+              <p class="hint">ถ้ากล้องเปิดไม่ได้ ยังใช้ช่องกรอกรหัสด้านล่างแทนได้</p>
+            </div>
+
+            <form id="transaction-form" class="grid-form">
+              <label>
+                QR / Code
+                <input id="qrValue" name="qrValue" placeholder="เช่น PT-1002 หรือ BX-00045" required />
+              </label>
+
+              <label>
+                ประเภทการทำรายการ
+                <select id="actionType" name="actionType">
+                  <option value="RECEIVE">รับเข้า</option>
+                  <option value="ISSUE">เบิกออก</option>
+                </select>
+              </label>
+
+              <label>
+                จำนวน
+                <input id="qty" name="qty" type="number" min="1" step="1" value="1" required />
+              </label>
+
+              <label>
+                ผู้ทำรายการ
+                <select id="userId" name="userId"></select>
+              </label>
+
+              <label>
+                งาน
+                <select id="jobId" name="jobId"></select>
+              </label>
+
+              <label>
+                ใบงาน
+                <select id="workOrderId" name="workOrderId"></select>
+              </label>
+
+              <label>
+                ตำแหน่งปลายทาง
+                <input id="toLocationCode" name="toLocationCode" placeholder="A01 หรือ PROD" />
+              </label>
+
+              <label class="full">
+                หมายเหตุ
+                <textarea id="remark" name="remark" rows="3" placeholder="ระบุเหตุผลหรือหมายเหตุเพิ่มเติม"></textarea>
+              </label>
+
+              <div class="actions full">
+                <button class="primary-button" type="submit">บันทึกรายการ</button>
+                <p id="form-message" class="form-message"></p>
+              </div>
+            </form>
+          </div>
+        </section>
+
+        <section class="view" id="view-history">
+          <div class="panel">
+            <div class="panel-head">
+              <div>
+                <h2>ประวัติการเคลื่อนไหว</h2>
+                <p>เช็กย้อนหลังได้ว่าใครรับ ใครเบิก เมื่อไหร่ และอ้างอิงงานไหน</p>
+              </div>
+            </div>
+
+            <div class="toolbar">
+              <input id="history-search" placeholder="ค้นหา QR, Part, งาน, คนทำ" />
+              <select id="history-action">
+                <option value="">ทุกประเภท</option>
+                <option value="RECEIVE">รับเข้า</option>
+                <option value="ISSUE">เบิกออก</option>
+              </select>
+              <button id="history-refresh" class="secondary-button" type="button">รีเฟรช</button>
+            </div>
+
+            <div id="history-list" class="list"></div>
+          </div>
+        </section>
+
+        <section class="view" id="view-dashboard">
+          <div class="stats" id="stats"></div>
+
+          <div class="panel">
+            <div class="panel-head">
+              <div>
+                <h2>คงเหลือปัจจุบัน</h2>
+                <p>ดูยอดคงเหลือ สถานะล่าสุด ตำแหน่งเก็บ และรายการต่ำกว่า min stock</p>
+              </div>
+            </div>
+            <div id="balance-list" class="list"></div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-head">
+              <div>
+                <h2>รายการล่าสุด</h2>
+                <p>ภาพรวมการเคลื่อนไหวล่าสุดจากหน้างาน</p>
+              </div>
+            </div>
+            <div id="recent-list" class="list"></div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <script src="/app.js"></script>
+  </body>
+</html>

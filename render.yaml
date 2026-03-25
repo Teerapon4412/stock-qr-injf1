@@ -1,0 +1,8 @@
+services:
+  - type: web
+    name: stock-qr-mvp
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    autoDeploy: true

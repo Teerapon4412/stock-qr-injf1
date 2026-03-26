@@ -219,6 +219,18 @@
               <input id="master-search" placeholder="ค้นหา code / name ใน master data" />
             </div>
 
+            <form id="catalog-upload-form" class="grid-form">
+              <label class="full">
+                Catalog XLSX
+                <input id="catalogFile" name="catalogFile" type="file" accept=".xlsx,.xls" />
+              </label>
+
+              <div class="actions full">
+                <button class="secondary-button" type="submit">Upload Catalog File</button>
+                <p id="catalog-message" class="form-message"></p>
+              </div>
+            </form>
+
             <form id="master-form" class="grid-form">
               <label>
                 ประเภทข้อมูล

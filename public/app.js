@@ -370,6 +370,47 @@ async function submitMaster(event) {
   }
 }
 
+function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = String(reader.result || "");
+      const base64 = result.includes(",") ? result.split(",")[1] : result;
+      resolve(base64);
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+async function uploadCatalog(event) {
+  event.preventDefault();
+  const file = $("catalogFile").files[0];
+  if (!file) {
+    $("catalog-message").textContent = "Please choose an Excel file first.";
+    return;
+  }
+
+  $("catalog-message").textContent = "Uploading catalog...";
+
+  try {
+    const contentBase64 = await fileToBase64(file);
+    const result = await api("/api/master/import/catalog", {
+      method: "POST",
+      body: JSON.stringify({
+        filename: file.name,
+        contentBase64
+      })
+    });
+
+    $("catalog-message").textContent = `Catalog updated: ${result.totalParts} parts`;
+    $("catalog-upload-form").reset();
+    await Promise.all([loadBootstrap(), refreshMasters(), refreshDashboard()]);
+  } catch (error) {
+    $("catalog-message").textContent = error.message;
+  }
+}
+
 function beginEditMaster(entity, id) {
   const item = state.masters[entity].find(row => row.id === id);
   if (!item) return;
@@ -471,6 +512,7 @@ function bindEvents() {
     button.addEventListener("click", () => activateView(button.dataset.viewTarget));
   });
   $("transaction-form").addEventListener("submit", submitTransaction);
+  $("catalog-upload-form").addEventListener("submit", uploadCatalog);
   $("qrValue").addEventListener("input", scheduleLookup);
   $("qrValue").addEventListener("change", () => {
     lookupQr().catch(error => {

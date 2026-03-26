@@ -38,7 +38,15 @@ function readPartCatalog() {
   }
 }
 
-const partCatalog = readPartCatalog();
+let partCatalog = readPartCatalog();
+
+function writePartCatalog(catalog) {
+  if (!fs.existsSync(DATA_DIR)) {
+    fs.mkdirSync(DATA_DIR, { recursive: true });
+  }
+  fs.writeFileSync(CATALOG_FILE, JSON.stringify(catalog, null, 2));
+  partCatalog = catalog;
+}
 
 function findCatalogItem(qrValue) {
   const safeValue = String(qrValue || "").trim();
@@ -65,6 +73,9 @@ function syncCatalogToStore(store) {
         minStock: 0
       };
       store.parts.push(part);
+      changed = true;
+    } else if (item.partName && part.partName !== item.partName) {
+      part.partName = item.partName;
       changed = true;
     }
 
@@ -94,6 +105,50 @@ async function syncCatalogToDatabase() {
   }
 }
 
+function buildCatalogFromWorkbook(buffer) {
+  const workbook = XLSX.read(buffer, { type: "buffer" });
+  const firstSheetName = workbook.SheetNames[0];
+  if (!firstSheetName) {
+    throw new Error("The uploaded workbook does not contain any sheets.");
+  }
+
+  const rows = XLSX.utils.sheet_to_json(workbook.Sheets[firstSheetName], { defval: "" });
+  const grouped = new Map();
+
+  for (const row of rows) {
+    const partCode = String(row["Part Code"] || row["partCode"] || row["PartCode"] || "").trim();
+    if (!partCode) {
+      continue;
+    }
+
+    const entry = grouped.get(partCode) || {
+      partCode,
+      partName: "",
+      machines: new Set(),
+      materialCodes: new Set()
+    };
+
+    const partName = String(row["Part Name"] || row["partName"] || row["PartName"] || "").trim();
+    const machine = String(row.Machine || row.machine || "").trim();
+    const materialCode = String(row["Material Code"] || row.materialCode || row["MaterialCode"] || "").trim();
+
+    if (partName && !entry.partName) entry.partName = partName;
+    if (machine) entry.machines.add(machine);
+    if (materialCode) entry.materialCodes.add(materialCode);
+
+    grouped.set(partCode, entry);
+  }
+
+  return Array.from(grouped.values())
+    .map(item => ({
+      partCode: item.partCode,
+      partName: item.partName || item.partCode,
+      machines: Array.from(item.machines),
+      materialCodes: Array.from(item.materialCodes)
+    }))
+    .sort((a, b) => a.partCode.localeCompare(b.partCode));
+}
+
 async function ensureCatalogPartInDatabase(catalogItem) {
   if (!db || !catalogItem || !catalogItem.partCode) {
     return null;
@@ -104,6 +159,11 @@ async function ensureCatalogPartInDatabase(catalogItem) {
     partResult = await db.query(
       "INSERT INTO parts (part_no, part_name, unit, min_stock) VALUES ($1, $2, $3, $4) RETURNING id, part_no, part_name",
       [catalogItem.partCode, catalogItem.partName || catalogItem.partCode, "PCS", 0]
+    );
+  } else if (catalogItem.partName && partResult.rows[0].part_name !== catalogItem.partName) {
+    partResult = await db.query(
+      "UPDATE parts SET part_name = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2 RETURNING id, part_no, part_name",
+      [catalogItem.partName, partResult.rows[0].id]
     );
   }
 
@@ -339,6 +399,32 @@ function syncStoreWithCatalog() {
   if (syncCatalogToStore(store)) {
     writeStore(store);
   }
+}
+
+async function importCatalog(payload) {
+  const contentBase64 = String(payload.contentBase64 || "");
+  if (!contentBase64) {
+    throw new Error("No file content was uploaded.");
+  }
+
+  const buffer = Buffer.from(contentBase64, "base64");
+  const catalog = buildCatalogFromWorkbook(buffer);
+  if (!catalog.length) {
+    throw new Error("No usable rows were found in the uploaded file.");
+  }
+
+  writePartCatalog(catalog);
+
+  if (!db) {
+    syncStoreWithCatalog();
+  } else {
+    await syncCatalogToDatabase();
+  }
+
+  return {
+    message: "Catalog imported successfully.",
+    totalParts: catalog.length
+  };
 }
 
 function json(res, statusCode, payload) {
@@ -1333,6 +1419,16 @@ const server = http.createServer(async (req, res) => {
   if (req.method === "GET" && requestUrl.pathname === "/api/dashboard") {
     try {
       json(res, 200, await getDashboard());
+    } catch (error) {
+      json(res, 500, { error: error.message || "Unexpected server error." });
+    }
+    return;
+  }
+
+  if (req.method === "POST" && requestUrl.pathname === "/api/master/import/catalog") {
+    try {
+      const body = await parseBody(req);
+      json(res, 200, await importCatalog(body));
     } catch (error) {
       json(res, 500, { error: error.message || "Unexpected server error." });
     }

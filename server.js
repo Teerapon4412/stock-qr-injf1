@@ -1300,28 +1300,6 @@ async function deleteMasterData(entity, id) {
   return { success: true };
 }
 
-async function resetMasterData(body = {}) {
-  if (body.confirm !== "RESET_MASTER_DATA") {
-    throw new Error("Reset confirmation is required.");
-  }
-
-  if (!db) {
-    const store = readStore();
-    store.jobs = [];
-    store.workOrders = [];
-    store.parts = [];
-    store.boxes = [];
-    store.qrCodes = [];
-    store.stockTransactions = [];
-    store.stockBalances = [];
-    writeStore(store);
-    return { success: true };
-  }
-
-  await db.query("TRUNCATE TABLE stock_balances, stock_transactions, qr_codes, boxes, parts, work_orders, jobs RESTART IDENTITY CASCADE");
-  return { success: true };
-}
-
 const server = http.createServer(async (req, res) => {
   const requestUrl = new URL(req.url, `http://${req.headers.host}`);
 
@@ -1383,16 +1361,6 @@ const server = http.createServer(async (req, res) => {
     try {
       const body = await parseBody(req);
       json(res, 200, await importCatalog(body));
-    } catch (error) {
-      json(res, 500, { error: error.message || "Unexpected server error." });
-    }
-    return;
-  }
-
-  if (req.method === "POST" && requestUrl.pathname === "/api/admin/reset-master-data") {
-    try {
-      const body = await parseBody(req);
-      json(res, 200, await resetMasterData(body));
     } catch (error) {
       json(res, 500, { error: error.message || "Unexpected server error." });
     }

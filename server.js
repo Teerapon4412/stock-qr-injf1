@@ -190,26 +190,11 @@ const defaultStore = {
     { id: 1, employeeCode: "U001", fullName: "Somchai Chaiya", roleId: 1, isActive: true },
     { id: 2, employeeCode: "U008", fullName: "Wittaya Saeng", roleId: 2, isActive: true }
   ],
-  jobs: [
-    { id: 1, jobNo: "JOB-20260325-01", jobName: "Motor Housing", customerName: "ACME", description: "Pilot lot" }
-  ],
-  workOrders: [
-    { id: 1, workOrderNo: "WO-20260325-01", jobId: 1, description: "Line A", plannedQty: 120 }
-  ],
-  parts: [
-    { id: 1, partNo: "PT-1002", partName: "Bearing", unit: "PCS", minStock: 10 },
-    { id: 2, partNo: "PT-2004", partName: "Housing", unit: "PCS", minStock: 5 }
-  ],
-  boxes: [
-    { id: 1, boxCode: "BX-00045", jobId: 1, workOrderId: 1, description: "Bearing set box" }
-  ],
-  qrCodes: [
-    { id: 1, qrValue: "JOB-20260325-01", entityType: "JOB", entityId: 1, isActive: true },
-    { id: 2, qrValue: "WO-20260325-01", entityType: "WORK_ORDER", entityId: 1, isActive: true },
-    { id: 3, qrValue: "PT-1002", entityType: "PART", entityId: 1, isActive: true },
-    { id: 4, qrValue: "PT-2004", entityType: "PART", entityId: 2, isActive: true },
-    { id: 5, qrValue: "BX-00045", entityType: "BOX", entityId: 1, isActive: true }
-  ],
+  jobs: [],
+  workOrders: [],
+  parts: [],
+  boxes: [],
+  qrCodes: [],
   statuses: [
     { id: 1, statusCode: "PENDING_RECEIVE", statusName: "Pending Receive" },
     { id: 2, statusCode: "IN_STOCK", statusName: "In Stock" },
@@ -219,54 +204,8 @@ const defaultStore = {
     { id: 1, locationCode: "A01", locationName: "Rack A01" },
     { id: 2, locationCode: "PROD", locationName: "Production" }
   ],
-  stockTransactions: [
-    {
-      id: 1,
-      transactionNo: "TXN-00001",
-      qrCodeId: 3,
-      entityType: "PART",
-      entityId: 1,
-      actionType: "RECEIVE",
-      qty: 50,
-      fromLocationId: null,
-      toLocationId: 1,
-      referenceJobId: 1,
-      referenceWorkOrderId: 1,
-      statusAfterId: 2,
-      performedBy: 1,
-      performedAt: "2026-03-25T09:15:00.000Z",
-      remark: "Initial receive"
-    },
-    {
-      id: 2,
-      transactionNo: "TXN-00002",
-      qrCodeId: 3,
-      entityType: "PART",
-      entityId: 1,
-      actionType: "ISSUE",
-      qty: 5,
-      fromLocationId: 1,
-      toLocationId: 2,
-      referenceJobId: 1,
-      referenceWorkOrderId: 1,
-      statusAfterId: 3,
-      performedBy: 2,
-      performedAt: "2026-03-25T14:42:00.000Z",
-      remark: "Issue to line"
-    }
-  ],
-  stockBalances: [
-    {
-      id: 1,
-      entityType: "PART",
-      entityId: 1,
-      qtyOnHand: 45,
-      currentStatusId: 3,
-      currentLocationId: 2,
-      lastTransactionId: 2,
-      updatedAt: "2026-03-25T14:42:00.000Z"
-    }
-  ]
+  stockTransactions: [],
+  stockBalances: []
 };
 
 const initSql = `
@@ -690,15 +629,8 @@ async function initializeDatabase() {
   try {
     await db.query("INSERT INTO roles (id, role_code, role_name) VALUES (1, 'ADMIN', 'Admin'), (2, 'CLERK', 'Store Clerk')");
     await db.query("INSERT INTO users (id, employee_code, full_name, role_id, is_active) VALUES (1, 'U001', 'Somchai Chaiya', 1, TRUE), (2, 'U008', 'Wittaya Saeng', 2, TRUE)");
-    await db.query("INSERT INTO jobs (id, job_no, job_name, customer_name, description) VALUES (1, 'JOB-20260325-01', 'Motor Housing', 'ACME', 'Pilot lot')");
-    await db.query("INSERT INTO work_orders (id, work_order_no, job_id, description, planned_qty) VALUES (1, 'WO-20260325-01', 1, 'Line A', 120)");
-    await db.query("INSERT INTO parts (id, part_no, part_name, unit, min_stock) VALUES (1, 'PT-1002', 'Bearing', 'PCS', 10), (2, 'PT-2004', 'Housing', 'PCS', 5)");
-    await db.query("INSERT INTO boxes (id, box_code, job_id, work_order_id, description) VALUES (1, 'BX-00045', 1, 1, 'Bearing set box')");
-    await db.query("INSERT INTO qr_codes (id, qr_value, entity_type, entity_id, is_active) VALUES (1, 'JOB-20260325-01', 'JOB', 1, TRUE), (2, 'WO-20260325-01', 'WORK_ORDER', 1, TRUE), (3, 'PT-1002', 'PART', 1, TRUE), (4, 'PT-2004', 'PART', 2, TRUE), (5, 'BX-00045', 'BOX', 1, TRUE)");
     await db.query("INSERT INTO item_status (id, status_code, status_name) VALUES (1, 'PENDING_RECEIVE', 'Pending Receive'), (2, 'IN_STOCK', 'In Stock'), (3, 'ISSUED', 'Issued')");
     await db.query("INSERT INTO locations (id, location_code, location_name) VALUES (1, 'A01', 'Rack A01'), (2, 'PROD', 'Production')");
-    await db.query("INSERT INTO stock_transactions (id, transaction_no, qr_code_id, entity_type, entity_id, action_type, qty, from_location_id, to_location_id, reference_job_id, reference_work_order_id, status_after_id, performed_by, performed_at, remark) VALUES (1, 'TXN-00001', 3, 'PART', 1, 'RECEIVE', 50, NULL, 1, 1, 1, 2, 1, '2026-03-25T09:15:00.000Z', 'Initial receive'), (2, 'TXN-00002', 3, 'PART', 1, 'ISSUE', 5, 1, 2, 1, 1, 3, 2, '2026-03-25T14:42:00.000Z', 'Issue to line')");
-    await db.query("INSERT INTO stock_balances (id, entity_type, entity_id, qty_on_hand, current_status_id, current_location_id, last_transaction_id, updated_at) VALUES (1, 'PART', 1, 45, 3, 2, 2, '2026-03-25T14:42:00.000Z')");
     await db.query("COMMIT");
   } catch (error) {
     await db.query("ROLLBACK");

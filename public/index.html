@@ -216,10 +216,11 @@
                 <h2>จัดการ Master Data</h2>
                 <p>เพิ่มข้อมูลหลักเข้าสู่ระบบ และดูรายการล่าสุดของแต่ละประเภท</p>
               </div>
-              <input id="master-search" placeholder="ค้นหา code / name ใน master data" />
             </div>
 
-            <form id="catalog-upload-form" class="grid-form">
+            <div class="master-layout">
+              <aside class="master-sidebar">
+                <form id="catalog-upload-form" class="grid-form master-stack-form">
               <label class="full">
                 Catalog XLSX
                 <input id="catalogFile" name="catalogFile" type="file" accept=".xlsx,.xls" />
@@ -231,7 +232,7 @@
               </div>
             </form>
 
-            <form id="master-form" class="grid-form">
+                <form id="master-form" class="grid-form master-stack-form">
               <label>
                 ประเภทข้อมูล
                 <select id="masterEntity" name="masterEntity">
@@ -268,9 +269,21 @@
                 <p id="master-message" class="form-message"></p>
               </div>
             </form>
-          </div>
+            </aside>
 
-          <div class="master-grid" id="master-grid"></div>
+            <div class="master-main">
+              <div class="master-results-head">
+                <div>
+                  <h2>Master List</h2>
+                  <p>Search and browse each master type in separate columns.</p>
+                </div>
+                <input id="master-search" placeholder="ค้นหา code / name ใน master data" />
+              </div>
+
+              <div class="master-grid" id="master-grid"></div>
+            </div>
+          </div>
+          </div>
         </section>
       </main>
     </div>

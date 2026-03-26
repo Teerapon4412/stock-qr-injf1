@@ -90,21 +90,35 @@ async function syncCatalogToDatabase() {
   }
 
   for (const item of partCatalog) {
-    let partResult = await db.query("SELECT id FROM parts WHERE part_no = $1", [item.partCode]);
-    if (partResult.rowCount === 0) {
-      partResult = await db.query(
-        "INSERT INTO parts (part_no, part_name, unit, min_stock) VALUES ($1, $2, $3, $4) RETURNING id",
-        [item.partCode, item.partName || item.partCode, "PCS", 0]
-      );
-    }
+    await ensureCatalogPartInDatabase(item);
+  }
+}
 
-    await db.query(
-      `INSERT INTO qr_codes (qr_value, entity_type, entity_id, is_active)
-       VALUES ($1, 'PART', $2, TRUE)
-       ON CONFLICT (qr_value) DO NOTHING`,
-      [item.partCode, partResult.rows[0].id]
+async function ensureCatalogPartInDatabase(catalogItem) {
+  if (!db || !catalogItem || !catalogItem.partCode) {
+    return null;
+  }
+
+  let partResult = await db.query("SELECT id, part_no, part_name FROM parts WHERE part_no = $1", [catalogItem.partCode]);
+  if (partResult.rowCount === 0) {
+    partResult = await db.query(
+      "INSERT INTO parts (part_no, part_name, unit, min_stock) VALUES ($1, $2, $3, $4) RETURNING id, part_no, part_name",
+      [catalogItem.partCode, catalogItem.partName || catalogItem.partCode, "PCS", 0]
     );
   }
+
+  await db.query(
+    `INSERT INTO qr_codes (qr_value, entity_type, entity_id, is_active)
+     VALUES ($1, 'PART', $2, TRUE)
+     ON CONFLICT (qr_value) DO NOTHING`,
+    [catalogItem.partCode, partResult.rows[0].id]
+  );
+
+  return {
+    id: partResult.rows[0].id,
+    partNo: partResult.rows[0].part_no,
+    partName: partResult.rows[0].part_name
+  };
 }
 
 const defaultStore = {
@@ -578,7 +592,11 @@ async function initializeDatabase() {
   await db.query(initSql);
   const countResult = await db.query("SELECT COUNT(*)::int AS count FROM roles");
   if (countResult.rows[0].count > 0) {
-    await syncCatalogToDatabase();
+    try {
+      await syncCatalogToDatabase();
+    } catch (error) {
+      console.error("Catalog sync skipped during startup", error);
+    }
     return;
   }
 
@@ -601,7 +619,11 @@ async function initializeDatabase() {
     throw error;
   }
 
-  await syncCatalogToDatabase();
+  try {
+    await syncCatalogToDatabase();
+  } catch (error) {
+    console.error("Catalog sync skipped during startup", error);
+  }
 }
 
 async function getBootstrapData() {
@@ -796,7 +818,14 @@ async function createTransaction(payload) {
   try {
     await client.query("BEGIN");
 
-    const qrResult = await client.query("SELECT id, qr_value, entity_type, entity_id FROM qr_codes WHERE qr_value = $1 AND is_active = TRUE", [payload.qrValue]);
+    let qrResult = await client.query("SELECT id, qr_value, entity_type, entity_id FROM qr_codes WHERE qr_value = $1 AND is_active = TRUE", [payload.qrValue]);
+    if (qrResult.rowCount === 0) {
+      const catalogItem = findCatalogItem(payload.qrValue);
+      if (catalogItem) {
+        await ensureCatalogPartInDatabase(catalogItem);
+        qrResult = await client.query("SELECT id, qr_value, entity_type, entity_id FROM qr_codes WHERE qr_value = $1 AND is_active = TRUE", [payload.qrValue]);
+      }
+    }
     if (qrResult.rowCount === 0) {
       await client.query("ROLLBACK");
       return { statusCode: 400, payload: { error: "QR code not found." } };
@@ -949,6 +978,18 @@ async function getQrLookup(qrValue) {
      WHERE q.qr_value = $1 AND q.is_active = TRUE`,
     [safeValue]
   );
+
+  if (result.rowCount === 0 && catalogItem) {
+    return {
+      found: true,
+      qrValue: safeValue,
+      entityType: "PART",
+      entityCode: catalogItem.partCode,
+      entityName: catalogItem.partName || catalogItem.partCode,
+      machines: catalogItem.machines,
+      materialCodes: catalogItem.materialCodes
+    };
+  }
 
   if (result.rowCount === 0) {
     return { found: false, qrValue: safeValue };

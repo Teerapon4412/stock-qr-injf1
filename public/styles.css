@@ -236,6 +236,43 @@ p {
   background: linear-gradient(90deg, var(--orange-a), var(--orange-b));
 }
 
+.lookup-card {
+  padding: 16px 18px;
+  border-radius: 20px;
+  background: rgba(255, 139, 52, 0.08);
+  border: 1px solid rgba(228, 90, 0, 0.14);
+}
+
+.lookup-label {
+  margin-bottom: 8px;
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.lookup-code {
+  margin-top: 6px;
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+
+.lookup-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.lookup-meta span {
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(23, 50, 68, 0.08);
+  font-size: 0.88rem;
+}
+
 .view {
   display: none;
 }

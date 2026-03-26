@@ -10,7 +10,102 @@ const ROOT = __dirname;
 const PUBLIC_DIR = path.join(ROOT, "public");
 const DATA_DIR = path.join(ROOT, "data");
 const STORE_FILE = path.join(DATA_DIR, "store.json");
+const CATALOG_FILE = path.join(DATA_DIR, "code-part-catalog.json");
 const DATABASE_URL = process.env.DATABASE_URL;
+
+function readPartCatalog() {
+  if (!fs.existsSync(CATALOG_FILE)) {
+    return [];
+  }
+
+  try {
+    const raw = fs.readFileSync(CATALOG_FILE, "utf8").replace(/^\uFEFF/, "");
+    const rows = JSON.parse(raw);
+    if (!Array.isArray(rows)) {
+      return [];
+    }
+    return rows
+      .map(item => ({
+        partCode: String(item.partCode || "").trim(),
+        partName: String(item.partName || "").trim(),
+        machines: Array.isArray(item.machines) ? item.machines.map(value => String(value || "").trim()).filter(Boolean) : [],
+        materialCodes: Array.isArray(item.materialCodes) ? item.materialCodes.map(value => String(value || "").trim()).filter(Boolean) : []
+      }))
+      .filter(item => item.partCode);
+  } catch (error) {
+    console.error("Failed to read code part catalog", error);
+    return [];
+  }
+}
+
+const partCatalog = readPartCatalog();
+
+function findCatalogItem(qrValue) {
+  const safeValue = String(qrValue || "").trim();
+  if (!safeValue) {
+    return null;
+  }
+  return partCatalog.find(item => item.partCode === safeValue) || null;
+}
+
+function syncCatalogToStore(store) {
+  if (!partCatalog.length) {
+    return false;
+  }
+
+  let changed = false;
+  for (const item of partCatalog) {
+    let part = store.parts.find(entry => entry.partNo === item.partCode);
+    if (!part) {
+      part = {
+        id: nextId(store.parts),
+        partNo: item.partCode,
+        partName: item.partName || item.partCode,
+        unit: "PCS",
+        minStock: 0
+      };
+      store.parts.push(part);
+      changed = true;
+    }
+
+    const existingQr = store.qrCodes.find(entry => entry.qrValue === item.partCode);
+    if (!existingQr) {
+      store.qrCodes.push({
+        id: nextId(store.qrCodes),
+        qrValue: item.partCode,
+        entityType: "PART",
+        entityId: part.id,
+        isActive: true
+      });
+      changed = true;
+    }
+  }
+
+  return changed;
+}
+
+async function syncCatalogToDatabase() {
+  if (!db || !partCatalog.length) {
+    return;
+  }
+
+  for (const item of partCatalog) {
+    let partResult = await db.query("SELECT id FROM parts WHERE part_no = $1", [item.partCode]);
+    if (partResult.rowCount === 0) {
+      partResult = await db.query(
+        "INSERT INTO parts (part_no, part_name, unit, min_stock) VALUES ($1, $2, $3, $4) RETURNING id",
+        [item.partCode, item.partName || item.partCode, "PCS", 0]
+      );
+    }
+
+    await db.query(
+      `INSERT INTO qr_codes (qr_value, entity_type, entity_id, is_active)
+       VALUES ($1, 'PART', $2, TRUE)
+       ON CONFLICT (qr_value) DO NOTHING`,
+      [item.partCode, partResult.rows[0].id]
+    );
+  }
+}
 
 const defaultStore = {
   roles: [
@@ -223,6 +318,13 @@ function readStore() {
 
 function writeStore(store) {
   fs.writeFileSync(STORE_FILE, JSON.stringify(store, null, 2));
+}
+
+function syncStoreWithCatalog() {
+  const store = readStore();
+  if (syncCatalogToStore(store)) {
+    writeStore(store);
+  }
 }
 
 function json(res, statusCode, payload) {
@@ -469,12 +571,14 @@ function toCamelLocation(row) {
 async function initializeDatabase() {
   if (!db) {
     ensureStore();
+    syncStoreWithCatalog();
     return;
   }
 
   await db.query(initSql);
   const countResult = await db.query("SELECT COUNT(*)::int AS count FROM roles");
   if (countResult.rows[0].count > 0) {
+    await syncCatalogToDatabase();
     return;
   }
 
@@ -496,6 +600,8 @@ async function initializeDatabase() {
     await db.query("ROLLBACK");
     throw error;
   }
+
+  await syncCatalogToDatabase();
 }
 
 async function getBootstrapData() {
@@ -802,6 +908,64 @@ async function createTransaction(payload) {
   }
 }
 
+async function getQrLookup(qrValue) {
+  const safeValue = String(qrValue || "").trim();
+  if (!safeValue) {
+    return { found: false };
+  }
+
+  const catalogItem = findCatalogItem(safeValue);
+
+  if (!db) {
+    const store = readStore();
+    const qr = store.qrCodes.find(item => item.qrValue === safeValue && item.isActive);
+    if (!qr) {
+      return { found: false, qrValue: safeValue };
+    }
+
+    const entity = resolveEntity(store, qr.entityType, qr.entityId);
+    return {
+      found: true,
+      qrValue: safeValue,
+      entityType: qr.entityType,
+      entityCode: entity ? entity.code : safeValue,
+      entityName: entity ? entity.name : (catalogItem ? catalogItem.partName : safeValue),
+      machines: catalogItem ? catalogItem.machines : [],
+      materialCodes: catalogItem ? catalogItem.materialCodes : []
+    };
+  }
+
+  const result = await db.query(
+    `SELECT
+       q.qr_value,
+       q.entity_type,
+       COALESCE(p.part_no, b.box_code, j.job_no, wo.work_order_no) AS entity_code,
+       COALESCE(p.part_name, b.description, j.job_name, wo.description, wo.work_order_no) AS entity_name
+     FROM qr_codes q
+     LEFT JOIN parts p ON q.entity_type = 'PART' AND p.id = q.entity_id
+     LEFT JOIN boxes b ON q.entity_type = 'BOX' AND b.id = q.entity_id
+     LEFT JOIN jobs j ON q.entity_type = 'JOB' AND j.id = q.entity_id
+     LEFT JOIN work_orders wo ON q.entity_type = 'WORK_ORDER' AND wo.id = q.entity_id
+     WHERE q.qr_value = $1 AND q.is_active = TRUE`,
+    [safeValue]
+  );
+
+  if (result.rowCount === 0) {
+    return { found: false, qrValue: safeValue };
+  }
+
+  const row = result.rows[0];
+  return {
+    found: true,
+    qrValue: safeValue,
+    entityType: row.entity_type,
+    entityCode: row.entity_code || safeValue,
+    entityName: row.entity_name || (catalogItem ? catalogItem.partName : safeValue),
+    machines: catalogItem ? catalogItem.machines : [],
+    materialCodes: catalogItem ? catalogItem.materialCodes : []
+  };
+}
+
 function parseMasterEntity(entity) {
   const map = {
     parts: "parts",
@@ -1099,6 +1263,15 @@ const server = http.createServer(async (req, res) => {
       const q = requestUrl.searchParams.get("q");
       const action = requestUrl.searchParams.get("action");
       json(res, 200, await getTransactions({ q, action }));
+    } catch (error) {
+      json(res, 500, { error: error.message || "Unexpected server error." });
+    }
+    return;
+  }
+
+  if (req.method === "GET" && requestUrl.pathname === "/api/lookup/qr") {
+    try {
+      json(res, 200, await getQrLookup(requestUrl.searchParams.get("value")));
     } catch (error) {
       json(res, 500, { error: error.message || "Unexpected server error." });
     }

@@ -3,6 +3,7 @@ const state = {
   scannerStream: null,
   detector: null,
   scanLoop: null,
+  lookupTimer: null,
   masterSearch: "",
   masterEditing: null,
   masters: {
@@ -33,6 +34,71 @@ function formatDate(value) {
     dateStyle: "medium",
     timeStyle: "short"
   }).format(new Date(value));
+}
+
+function setLookupMeta(lines) {
+  const meta = $("lookup-meta");
+  meta.innerHTML = "";
+
+  lines.forEach(line => {
+    const span = document.createElement("span");
+    span.textContent = line;
+    meta.appendChild(span);
+  });
+}
+
+function renderLookup(result) {
+  const card = $("lookup-card");
+  if (!card) return;
+
+  if (!result || !result.qrValue) {
+    card.classList.add("hidden");
+    $("lookup-title").textContent = "-";
+    $("lookup-code").textContent = "-";
+    setLookupMeta([]);
+    return;
+  }
+
+  card.classList.remove("hidden");
+
+  if (!result.found) {
+    $("lookup-title").textContent = "QR not found";
+    $("lookup-code").textContent = result.qrValue;
+    setLookupMeta(["Add this code to master data before saving."]);
+    return;
+  }
+
+  $("lookup-title").textContent = result.entityName || result.entityCode || result.qrValue;
+  $("lookup-code").textContent = `${result.entityType} | ${result.entityCode || result.qrValue}`;
+  const lines = [];
+  if (result.machines && result.machines.length) lines.push(`Machine: ${result.machines.join(", ")}`);
+  if (result.materialCodes && result.materialCodes.length) lines.push(`Material: ${result.materialCodes.join(", ")}`);
+  setLookupMeta(lines);
+}
+
+async function lookupQr() {
+  const qrValue = $("qrValue").value.trim();
+  if (!qrValue) {
+    renderLookup(null);
+    return;
+  }
+
+  const result = await api(`/api/lookup/qr?value=${encodeURIComponent(qrValue)}`);
+  renderLookup(result);
+  if (!result.found) {
+    $("form-message").textContent = "QR ยังไม่ถูกจับคู่กับข้อมูล master";
+  } else if ($("form-message").textContent === "QR ยังไม่ถูกจับคู่กับข้อมูล master") {
+    $("form-message").textContent = "";
+  }
+}
+
+function scheduleLookup() {
+  clearTimeout(state.lookupTimer);
+  state.lookupTimer = setTimeout(() => {
+    lookupQr().catch(error => {
+      $("form-message").textContent = error.message;
+    });
+  }, 180);
 }
 
 function renderOptions(select, items, placeholder, valueKey, labelBuilder) {
@@ -262,6 +328,7 @@ async function submitTransaction(event) {
     if (state.bootstrap?.jobs[0]) $("jobId").value = state.bootstrap.jobs[0].id;
     if (state.bootstrap?.workOrders[0]) $("workOrderId").value = state.bootstrap.workOrders[0].id;
     $("qty").value = 1;
+    renderLookup(null);
     await Promise.all([loadBootstrap(), refreshHistory(), refreshDashboard(), refreshMasters()]);
   } catch (error) {
     $("form-message").textContent = error.message;
@@ -369,6 +436,7 @@ async function startScanner() {
       if (codes[0]?.rawValue) {
         $("qrValue").value = codes[0].rawValue;
         $("form-message").textContent = `อ่าน QR ได้: ${codes[0].rawValue}`;
+        await lookupQr();
         stopScanner();
         return;
       }
@@ -403,6 +471,12 @@ function bindEvents() {
     button.addEventListener("click", () => activateView(button.dataset.viewTarget));
   });
   $("transaction-form").addEventListener("submit", submitTransaction);
+  $("qrValue").addEventListener("input", scheduleLookup);
+  $("qrValue").addEventListener("change", () => {
+    lookupQr().catch(error => {
+      $("form-message").textContent = error.message;
+    });
+  });
   $("master-form").addEventListener("submit", submitMaster);
   $("master-search").addEventListener("input", event => {
     state.masterSearch = event.target.value;

@@ -727,6 +727,71 @@ textarea {
   font-size: 0.92rem;
 }
 
+.recent-table {
+  display: grid;
+  gap: 12px;
+}
+
+.recent-table-head,
+.recent-row {
+  display: grid;
+  grid-template-columns: minmax(130px, 1fr) minmax(140px, 1fr) minmax(250px, 2fr) minmax(90px, 0.7fr) minmax(150px, 1fr) minmax(170px, 1fr) minmax(100px, 0.7fr);
+  gap: 12px;
+  align-items: center;
+}
+
+.recent-table-head {
+  padding: 0 16px;
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.recent-table-body {
+  display: grid;
+  gap: 10px;
+}
+
+.recent-row {
+  padding: 16px;
+  border-radius: 22px;
+  border: 1px solid rgba(31, 64, 92, 0.09);
+  background: linear-gradient(180deg, rgba(247, 250, 253, 0.96), rgba(255, 255, 255, 0.96));
+}
+
+.recent-cell {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+}
+
+.recent-label {
+  display: none;
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.recent-transaction strong,
+.recent-cell strong {
+  font-size: 1rem;
+  color: var(--ink);
+}
+
+.recent-name span,
+.recent-code span,
+.recent-cell span:not(.badge):not(.recent-label) {
+  overflow-wrap: anywhere;
+}
+
+.recent-action {
+  justify-items: start;
+}
+
 .balance-table {
   display: grid;
   gap: 12px;
@@ -1111,6 +1176,21 @@ textarea {
 
   .dashboard-filter-actions .secondary-button {
     flex: 1 1 0;
+  }
+
+  .recent-table-head {
+    display: none;
+  }
+
+  .recent-row {
+    grid-template-columns: 1fr;
+    gap: 10px;
+    padding: 14px;
+    border-radius: 18px;
+  }
+
+  .recent-label {
+    display: block;
   }
 
   .balance-table-head {

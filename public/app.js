@@ -76,6 +76,14 @@ function updateDashboardFilterMessage() {
   el.textContent = `กำลังกรองข้อมูล ${parts.join(" ")}`;
 }
 
+function actionLabel(actionType) {
+  return actionType === "RECEIVE" ? "In" : "Out";
+}
+
+function actionClass(actionType) {
+  return actionType === "RECEIVE" ? "receive" : "issue";
+}
+
 function setLookupMeta(lines) {
   const meta = $("lookup-meta");
   meta.innerHTML = "";
@@ -283,7 +291,7 @@ function renderHistory(rows) {
             <strong>${item.entityCode}</strong>
             <div>${item.entityName}</div>
           </div>
-          <span class="badge ${item.actionType === "RECEIVE" ? "receive" : "issue"}">${item.actionType}</span>
+          <span class="badge ${actionClass(item.actionType)}">${actionLabel(item.actionType)}</span>
         </div>
         <div class="list-meta">
           <span>QR: ${item.qrValue}</span>
@@ -368,22 +376,53 @@ function renderDashboard(data) {
     : '<div class="empty">ยังไม่มีข้อมูลคงเหลือ</div>';
 
   $("recent-list").innerHTML = data.recentTransactions.length
-    ? data.recentTransactions.map(item => `
-      <article class="list-item">
-        <div class="list-top">
-          <div>
-            <strong>${item.transactionNo}</strong>
-            <div>${item.entityCode} - ${item.entityName}</div>
-          </div>
-          <span class="badge ${item.actionType === "RECEIVE" ? "receive" : "issue"}">${item.actionType}</span>
+    ? `
+      <div class="recent-table">
+        <div class="recent-table-head">
+          <span>เลขที่รายการ</span>
+          <span>Part Code</span>
+          <span>ชื่อรายการ</span>
+          <span>จำนวน</span>
+          <span>ผู้ทำ</span>
+          <span>เวลา</span>
+          <span>ประเภท</span>
         </div>
-        <div class="list-meta">
-          <span>จำนวน: ${item.qty}</span>
-          <span>ผู้ทำ: ${item.userName}</span>
-          <span>เวลา: ${formatDate(item.performedAt)}</span>
+        <div class="recent-table-body">
+          ${data.recentTransactions.map(item => `
+            <article class="recent-row">
+              <div class="recent-cell recent-transaction">
+                <span class="recent-label">เลขที่รายการ</span>
+                <strong>${item.transactionNo}</strong>
+              </div>
+              <div class="recent-cell recent-code">
+                <span class="recent-label">Part Code</span>
+                <span>${item.entityCode}</span>
+              </div>
+              <div class="recent-cell recent-name">
+                <span class="recent-label">ชื่อรายการ</span>
+                <span>${item.entityName}</span>
+              </div>
+              <div class="recent-cell">
+                <span class="recent-label">จำนวน</span>
+                <strong>${item.qty}</strong>
+              </div>
+              <div class="recent-cell">
+                <span class="recent-label">ผู้ทำ</span>
+                <span>${item.userName}</span>
+              </div>
+              <div class="recent-cell">
+                <span class="recent-label">เวลา</span>
+                <span>${formatDate(item.performedAt)}</span>
+              </div>
+              <div class="recent-cell recent-action">
+                <span class="recent-label">ประเภท</span>
+                <span class="badge ${actionClass(item.actionType)}">${actionLabel(item.actionType)}</span>
+              </div>
+            </article>
+          `).join("")}
         </div>
-      </article>
-    `).join("")
+      </div>
+    `
     : '<div class="empty">ยังไม่มีรายการล่าสุด</div>';
 }
 

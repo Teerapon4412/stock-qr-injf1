@@ -284,23 +284,49 @@ function renderDashboard(data) {
   `;
 
   $("balance-list").innerHTML = data.balances.length
-    ? data.balances.map(item => `
-      <article class="list-item">
-        <div class="list-top">
-          <div>
-            <strong>${item.code}</strong>
-            <div>${item.name}</div>
-          </div>
-          ${item.isLowStock ? '<span class="badge low">LOW STOCK</span>' : `<span>${item.entityType}</span>`}
+    ? `
+      <div class="balance-table">
+        <div class="balance-table-head">
+          <span>Part Code</span>
+          <span>ชื่อรายการ</span>
+          <span>คงเหลือ</span>
+          <span>สถานะ</span>
+          <span>ตำแหน่ง</span>
+          <span>อัปเดตล่าสุด</span>
         </div>
-        <div class="list-meta">
-          <span>คงเหลือ: ${item.qtyOnHand} ${item.unit || ""}</span>
-          <span>สถานะ: ${item.currentStatus}</span>
-          <span>ตำแหน่ง: ${item.currentLocation}</span>
-          <span>อัปเดตล่าสุด: ${formatDate(item.updatedAt)}</span>
+        <div class="balance-table-body">
+          ${data.balances.map(item => `
+            <article class="balance-row ${item.isLowStock ? "is-low" : ""}">
+              <div class="balance-cell balance-code">
+                <span class="balance-label">Part Code</span>
+                <strong>${item.code}</strong>
+                <span class="balance-type">${item.isLowStock ? "LOW STOCK" : item.entityType}</span>
+              </div>
+              <div class="balance-cell balance-name">
+                <span class="balance-label">ชื่อรายการ</span>
+                <span>${item.name}</span>
+              </div>
+              <div class="balance-cell">
+                <span class="balance-label">คงเหลือ</span>
+                <strong>${item.qtyOnHand} ${item.unit || ""}</strong>
+              </div>
+              <div class="balance-cell">
+                <span class="balance-label">สถานะ</span>
+                <span>${item.currentStatus}</span>
+              </div>
+              <div class="balance-cell">
+                <span class="balance-label">ตำแหน่ง</span>
+                <span>${item.currentLocation}</span>
+              </div>
+              <div class="balance-cell">
+                <span class="balance-label">อัปเดตล่าสุด</span>
+                <span>${formatDate(item.updatedAt)}</span>
+              </div>
+            </article>
+          `).join("")}
         </div>
-      </article>
-    `).join("")
+      </div>
+    `
     : '<div class="empty">ยังไม่มีข้อมูลคงเหลือ</div>';
 
   $("recent-list").innerHTML = data.recentTransactions.length

@@ -703,6 +703,91 @@ textarea {
   margin-bottom: 16px;
 }
 
+.balance-table {
+  display: grid;
+  gap: 12px;
+}
+
+.balance-table-head,
+.balance-row {
+  display: grid;
+  grid-template-columns: minmax(150px, 1.1fr) minmax(220px, 1.9fr) minmax(110px, 0.8fr) minmax(110px, 0.8fr) minmax(110px, 0.8fr) minmax(170px, 1fr);
+  gap: 12px;
+  align-items: center;
+}
+
+.balance-table-head {
+  padding: 0 16px;
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.balance-table-body {
+  display: grid;
+  gap: 10px;
+}
+
+.balance-row {
+  padding: 16px;
+  border-radius: 22px;
+  border: 1px solid rgba(31, 64, 92, 0.09);
+  background: linear-gradient(180deg, rgba(247, 250, 253, 0.96), rgba(255, 255, 255, 0.96));
+}
+
+.balance-row.is-low {
+  border-color: rgba(236, 176, 68, 0.34);
+  box-shadow: inset 0 0 0 1px rgba(236, 176, 68, 0.14);
+}
+
+.balance-cell {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+}
+
+.balance-label {
+  display: none;
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.balance-code strong,
+.balance-cell strong {
+  font-size: 1rem;
+}
+
+.balance-name span:last-child,
+.balance-cell span:last-child {
+  overflow-wrap: anywhere;
+}
+
+.balance-type {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: fit-content;
+  min-height: 28px;
+  padding: 0 10px;
+  border-radius: 999px;
+  color: var(--muted);
+  background: rgba(255, 255, 255, 0.82);
+  border: 1px solid rgba(23, 50, 68, 0.08);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.balance-row.is-low .balance-type {
+  color: #9e6a14;
+  background: rgba(236, 176, 68, 0.16);
+  border-color: rgba(236, 176, 68, 0.24);
+}
+
 .master-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -988,6 +1073,26 @@ textarea {
 
   .stats {
     gap: 10px;
+  }
+
+  .balance-table-head {
+    display: none;
+  }
+
+  .balance-row {
+    grid-template-columns: 1fr;
+    gap: 10px;
+    padding: 14px;
+    border-radius: 18px;
+  }
+
+  .balance-label {
+    display: block;
+  }
+
+  .balance-code strong,
+  .balance-cell strong {
+    font-size: 0.98rem;
   }
 
   .stat-card {

@@ -703,6 +703,30 @@ textarea {
   margin-bottom: 16px;
 }
 
+.dashboard-filter-panel {
+  margin-bottom: 16px;
+}
+
+.dashboard-filter-bar {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) auto;
+  gap: 14px;
+  align-items: end;
+}
+
+.dashboard-filter-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.filter-message {
+  margin-top: 12px;
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
 .balance-table {
   display: grid;
   gap: 12px;
@@ -1073,6 +1097,20 @@ textarea {
 
   .stats {
     gap: 10px;
+  }
+
+  .dashboard-filter-bar {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .dashboard-filter-actions {
+    width: 100%;
+    justify-content: stretch;
+  }
+
+  .dashboard-filter-actions .secondary-button {
+    flex: 1 1 0;
   }
 
   .balance-table-head {

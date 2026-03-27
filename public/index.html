@@ -231,6 +231,30 @@
         <section class="view" id="view-dashboard">
           <div class="stats" id="stats"></div>
 
+          <div class="panel dashboard-filter-panel">
+            <div class="panel-head">
+              <div>
+                <h2>ตัวกรองวันเวลา</h2>
+                <p>เลือกช่วงเวลาเพื่อกรองยอดคงเหลือและรายการล่าสุดในหน้าเดียว</p>
+              </div>
+            </div>
+            <div class="dashboard-filter-bar">
+              <label>
+                จาก
+                <input id="dashboard-from" type="datetime-local" />
+              </label>
+              <label>
+                ถึง
+                <input id="dashboard-to" type="datetime-local" />
+              </label>
+              <div class="dashboard-filter-actions">
+                <button id="dashboard-apply" class="secondary-button" type="button">ใช้ตัวกรอง</button>
+                <button id="dashboard-clear" class="secondary-button" type="button">ล้าง</button>
+              </div>
+            </div>
+            <p id="dashboard-filter-message" class="filter-message"></p>
+          </div>
+
           <div class="panel">
             <div class="panel-head">
               <div>

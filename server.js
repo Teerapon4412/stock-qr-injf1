@@ -915,6 +915,8 @@ async function getTransactions(filters) {
   if (!db) {
     const store = readStore();
     let rows = store.stockTransactions.map(item => enrichTransaction(store, item));
+    const fromTime = filters.from ? new Date(filters.from) : null;
+    const toTime = filters.to ? new Date(filters.to) : null;
     if (filters.q) {
       const needle = filters.q.toLowerCase();
       rows = rows.filter(item =>
@@ -925,6 +927,12 @@ async function getTransactions(filters) {
     }
     if (filters.action) {
       rows = rows.filter(item => item.actionType === filters.action.toUpperCase());
+    }
+    if (fromTime && !Number.isNaN(fromTime.getTime())) {
+      rows = rows.filter(item => new Date(item.performedAt) >= fromTime);
+    }
+    if (toTime && !Number.isNaN(toTime.getTime())) {
+      rows = rows.filter(item => new Date(item.performedAt) <= toTime);
     }
     rows.sort((a, b) => new Date(b.performedAt) - new Date(a.performedAt));
     return rows;
@@ -946,6 +954,20 @@ async function getTransactions(filters) {
       OR LOWER(COALESCE(j2.job_no, '')) LIKE $${params.length}
       OR LOWER(COALESCE(wo.work_order_no, '')) LIKE $${params.length}
     )`);
+  }
+  if (filters.from) {
+    const fromTime = new Date(filters.from);
+    if (!Number.isNaN(fromTime.getTime())) {
+      params.push(fromTime.toISOString());
+      conditions.push(`t.performed_at >= $${params.length}`);
+    }
+  }
+  if (filters.to) {
+    const toTime = new Date(filters.to);
+    if (!Number.isNaN(toTime.getTime())) {
+      params.push(toTime.toISOString());
+      conditions.push(`t.performed_at <= $${params.length}`);
+    }
   }
 
   const query = `
@@ -1069,16 +1091,46 @@ async function getTransactionByNumber(transactionNo) {
 }
 
 async function getDashboard() {
+  const filters = arguments[0] || {};
+  const fromTime = filters.from ? new Date(filters.from) : null;
+  const toTime = filters.to ? new Date(filters.to) : null;
+  const inRange = value => {
+    if (!value) return false;
+    const time = new Date(value);
+    if (Number.isNaN(time.getTime())) return false;
+    if (fromTime && time < fromTime) return false;
+    if (toTime && time > toTime) return false;
+    return true;
+  };
+
   if (!db) {
     const store = readStore();
+    let balances = computeDashboard(store);
+    let recentTransactions = store.stockTransactions
+      .slice()
+      .sort((a, b) => new Date(b.performedAt) - new Date(a.performedAt))
+      .map(item => enrichTransaction(store, item));
+
+    if (fromTime || toTime) {
+      balances = balances.filter(item => inRange(item.updatedAt));
+      recentTransactions = recentTransactions.filter(item => inRange(item.performedAt));
+    }
+
     return {
-      balances: computeDashboard(store),
-      recentTransactions: store.stockTransactions
-        .slice()
-        .sort((a, b) => new Date(b.performedAt) - new Date(a.performedAt))
-        .slice(0, 5)
-        .map(item => enrichTransaction(store, item))
+      balances,
+      recentTransactions: recentTransactions.slice(0, 5)
     };
+  }
+
+  const balanceParams = [];
+  const balanceConditions = [];
+  if (fromTime) {
+    balanceParams.push(fromTime.toISOString());
+    balanceConditions.push(`sb.updated_at >= $${balanceParams.length}`);
+  }
+  if (toTime) {
+    balanceParams.push(toTime.toISOString());
+    balanceConditions.push(`sb.updated_at <= $${balanceParams.length}`);
   }
 
   const balancesResult = await db.query(`
@@ -1095,10 +1147,14 @@ async function getDashboard() {
     LEFT JOIN boxes b ON sb.entity_type = 'BOX' AND b.id = sb.entity_id
     LEFT JOIN jobs j ON sb.entity_type = 'JOB' AND j.id = sb.entity_id
     LEFT JOIN work_orders wo ON sb.entity_type = 'WORK_ORDER' AND wo.id = sb.entity_id
+    ${balanceConditions.length ? `WHERE ${balanceConditions.join(" AND ")}` : ""}
     ORDER BY code ASC
-  `);
+  `, balanceParams);
 
-  const recentTransactions = await getTransactions({});
+  const transactionFilters = {};
+  if (filters.from) transactionFilters.from = filters.from;
+  if (filters.to) transactionFilters.to = filters.to;
+  const recentTransactions = await getTransactions(transactionFilters);
   return {
     balances: balancesResult.rows.map(row => ({
       id: row.id,
@@ -1721,7 +1777,9 @@ const server = http.createServer(async (req, res) => {
 
   if (req.method === "GET" && requestUrl.pathname === "/api/dashboard") {
     try {
-      json(res, 200, await getDashboard());
+      const from = requestUrl.searchParams.get("from");
+      const to = requestUrl.searchParams.get("to");
+      json(res, 200, await getDashboard({ from, to }));
     } catch (error) {
       json(res, 500, { error: error.message || "Unexpected server error." });
     }

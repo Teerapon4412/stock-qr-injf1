@@ -6,6 +6,10 @@ const state = {
   scanLoop: null,
   lookupTimer: null,
   lastLookup: null,
+  dashboardFilters: {
+    from: "",
+    to: ""
+  },
   masterSearch: "",
   masterEditing: null,
   masters: {
@@ -36,6 +40,40 @@ function formatDate(value) {
     dateStyle: "medium",
     timeStyle: "short"
   }).format(new Date(value));
+}
+
+function buildQuery(params) {
+  const query = new URLSearchParams();
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && String(value).trim() !== "") {
+      query.set(key, String(value).trim());
+    }
+  });
+  const text = query.toString();
+  return text ? `?${text}` : "";
+}
+
+function syncDashboardFilterInputs() {
+  const fromInput = $("dashboard-from");
+  const toInput = $("dashboard-to");
+  if (fromInput) fromInput.value = state.dashboardFilters.from;
+  if (toInput) toInput.value = state.dashboardFilters.to;
+}
+
+function updateDashboardFilterMessage() {
+  const el = $("dashboard-filter-message");
+  if (!el) return;
+
+  const { from, to } = state.dashboardFilters;
+  if (!from && !to) {
+    el.textContent = "กำลังแสดงข้อมูลทั้งหมด";
+    return;
+  }
+
+  const parts = [];
+  if (from) parts.push(`จาก ${formatDate(from)}`);
+  if (to) parts.push(`ถึง ${formatDate(to)}`);
+  el.textContent = `กำลังกรองข้อมูล ${parts.join(" ")}`;
 }
 
 function setLookupMeta(lines) {
@@ -431,8 +469,29 @@ async function refreshHistory() {
 }
 
 async function refreshDashboard() {
-  const data = await api("/api/dashboard");
+  const query = buildQuery(state.dashboardFilters);
+  const data = await api(`/api/dashboard${query}`);
   renderDashboard(data);
+  updateDashboardFilterMessage();
+}
+
+async function applyDashboardFilters() {
+  const from = $("dashboard-from")?.value || "";
+  const to = $("dashboard-to")?.value || "";
+
+  if (from && to && new Date(from) > new Date(to)) {
+    $("dashboard-filter-message").textContent = "เวลาเริ่มต้นต้องไม่มากกว่าเวลาสิ้นสุด";
+    return;
+  }
+
+  state.dashboardFilters = { from, to };
+  await refreshDashboard();
+}
+
+async function clearDashboardFilters() {
+  state.dashboardFilters = { from: "", to: "" };
+  syncDashboardFilterInputs();
+  await refreshDashboard();
 }
 
 async function submitTransaction(event) {
@@ -774,6 +833,23 @@ function bindEvents() {
   $("history-refresh").addEventListener("click", refreshHistory);
   $("history-search").addEventListener("input", refreshHistory);
   $("history-action").addEventListener("change", refreshHistory);
+  $("dashboard-apply").addEventListener("click", () => {
+    applyDashboardFilters().catch(error => {
+      $("dashboard-filter-message").textContent = error.message;
+    });
+  });
+  $("dashboard-clear").addEventListener("click", () => {
+    clearDashboardFilters().catch(error => {
+      $("dashboard-filter-message").textContent = error.message;
+    });
+  });
+  ["dashboard-from", "dashboard-to"].forEach(id => {
+    $(id).addEventListener("change", () => {
+      applyDashboardFilters().catch(error => {
+        $("dashboard-filter-message").textContent = error.message;
+      });
+    });
+  });
   $("native-scan-button").addEventListener("click", openNativeCameraScan);
   $("native-scan-input").addEventListener("change", handleNativeScanFile);
   $("scan-toggle").addEventListener("click", startScanner);
@@ -908,6 +984,8 @@ function bindEvents() {
 
 async function initAuthenticatedApp() {
   setShellVisible(true);
+  syncDashboardFilterInputs();
+  updateDashboardFilterMessage();
   await loadBootstrap();
   if (state.session?.role === "admin") {
     await Promise.all([refreshHistory(), refreshDashboard(), refreshMasters()]);

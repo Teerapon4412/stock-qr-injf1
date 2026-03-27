@@ -428,7 +428,11 @@ async function submitTransaction(event) {
       method: "POST",
       body: JSON.stringify(payload)
     });
-    $("form-message").textContent = `บันทึกแล้ว: ${result.transaction.transactionNo} | คงเหลือ ${result.balance.qtyOnHand}`;
+    const transactionNo = result.transaction?.transactionNo || "saved";
+    const qtyOnHand = result.balance?.qtyOnHand;
+    $("form-message").textContent = qtyOnHand !== undefined
+      ? `บันทึกแล้ว: ${transactionNo} | คงเหลือ ${qtyOnHand}`
+      : `บันทึกแล้ว: ${transactionNo}`;
     $("transaction-form").reset();
     if (state.bootstrap?.users[0]) $("userId").value = state.bootstrap.users[0].id;
     if (state.bootstrap?.jobs[0]) $("jobId").value = state.bootstrap.jobs[0].id;

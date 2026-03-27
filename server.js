@@ -874,6 +874,74 @@ async function getTransactions(filters) {
   }));
 }
 
+async function getTransactionByNumber(transactionNo) {
+  if (!transactionNo) {
+    return null;
+  }
+
+  if (!db) {
+    const store = readStore();
+    const transaction = store.stockTransactions.find(item => item.transactionNo === transactionNo);
+    return transaction ? enrichTransaction(store, transaction) : null;
+  }
+
+  const result = await db.query(
+    `SELECT
+       t.id, t.transaction_no, t.qr_code_id, t.entity_type, t.entity_id, t.action_type, t.qty,
+       t.from_location_id, t.to_location_id, t.reference_job_id, t.reference_work_order_id,
+       t.status_after_id, t.performed_by, t.performed_at, t.remark,
+       q.qr_value, u.full_name AS user_name, s.status_name AS status_after_name,
+       l.location_name AS to_location_name, j2.job_no, wo.work_order_no,
+       COALESCE(p.part_no, b.box_code, j.job_no, wo2.work_order_no) AS entity_code,
+       COALESCE(p.part_name, b.description, j.job_name, wo2.description, wo2.work_order_no) AS entity_name
+     FROM stock_transactions t
+     JOIN qr_codes q ON q.id = t.qr_code_id
+     JOIN users u ON u.id = t.performed_by
+     LEFT JOIN item_status s ON s.id = t.status_after_id
+     LEFT JOIN locations l ON l.id = t.to_location_id
+     LEFT JOIN jobs j2 ON j2.id = t.reference_job_id
+     LEFT JOIN work_orders wo ON wo.id = t.reference_work_order_id
+     LEFT JOIN parts p ON t.entity_type = 'PART' AND p.id = t.entity_id
+     LEFT JOIN boxes b ON t.entity_type = 'BOX' AND b.id = t.entity_id
+     LEFT JOIN jobs j ON t.entity_type = 'JOB' AND j.id = t.entity_id
+     LEFT JOIN work_orders wo2 ON t.entity_type = 'WORK_ORDER' AND wo2.id = t.entity_id
+     WHERE t.transaction_no = $1
+     LIMIT 1`,
+    [transactionNo]
+  );
+
+  if (result.rowCount === 0) {
+    return null;
+  }
+
+  const row = result.rows[0];
+  return {
+    id: row.id,
+    transactionNo: row.transaction_no,
+    qrCodeId: row.qr_code_id,
+    entityType: row.entity_type,
+    entityId: row.entity_id,
+    actionType: row.action_type,
+    qty: Number(row.qty),
+    fromLocationId: row.from_location_id,
+    toLocationId: row.to_location_id,
+    referenceJobId: row.reference_job_id,
+    referenceWorkOrderId: row.reference_work_order_id,
+    statusAfterId: row.status_after_id,
+    performedBy: row.performed_by,
+    performedAt: row.performed_at,
+    remark: row.remark,
+    qrValue: row.qr_value,
+    entityCode: row.entity_code || "-",
+    entityName: row.entity_name || "-",
+    userName: row.user_name || "-",
+    statusAfterName: row.status_after_name || "-",
+    toLocationName: row.to_location_name || "-",
+    jobNo: row.job_no || "",
+    workOrderNo: row.work_order_no || ""
+  };
+}
+
 async function getDashboard() {
   if (!db) {
     const store = readStore();
@@ -1048,8 +1116,7 @@ async function createTransaction(payload) {
     );
 
     await client.query("COMMIT");
-    const transactions = await getTransactions({ q: payload.qrValue });
-    const transaction = transactions.find(item => item.transactionNo === transactionNo);
+    const transaction = await getTransactionByNumber(transactionNo);
     return {
       statusCode: 201,
       payload: {

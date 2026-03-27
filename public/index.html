@@ -88,8 +88,17 @@
               <button id="scan-toggle" class="secondary-button" type="button">เปิดกล้องสแกน</button>
             </div>
 
+            <div class="button-row mobile-scan-row">
+              <button id="native-scan-button" class="secondary-button" type="button">เปิดกล้องมือถือสแกน</button>
+            </div>
+            <input id="native-scan-input" type="file" accept="image/*" capture="environment" class="hidden" />
+
             <div id="scanner-wrap" class="scanner-wrap hidden">
               <video id="scanner" playsinline></video>
+              <div class="scanner-status-row">
+                <div class="lookup-label">Scanner Status</div>
+                <strong id="scanner-status">พร้อมสแกน</strong>
+              </div>
               <p class="hint">ถ้ากล้องเปิดไม่ได้ ยังใช้ช่องกรอกรหัสด้านล่างแทนได้</p>
             </div>
 

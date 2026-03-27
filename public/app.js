@@ -559,6 +559,13 @@ function activateView(viewName) {
   });
 }
 
+function setScannerStatus(message) {
+  const el = $("scanner-status");
+  if (el) {
+    el.textContent = message;
+  }
+}
+
 async function startScanner() {
   if (!("BarcodeDetector" in window)) {
     $("form-message").textContent = "อุปกรณ์นี้ไม่รองรับ BarcodeDetector ใช้การกรอกรหัสแทนได้";
@@ -614,6 +621,109 @@ function stopScanner() {
   $("scan-toggle").textContent = "เปิดกล้องสแกน";
 }
 
+async function startScanner() {
+  if (!("BarcodeDetector" in window)) {
+    $("form-message").textContent = "อุปกรณ์นี้ไม่รองรับ BarcodeDetector ใช้การกรอกรหัสแทนได้";
+    setScannerStatus("อุปกรณ์นี้ไม่รองรับการสแกนด้วยกล้อง");
+    return;
+  }
+  if (state.scannerStream) {
+    stopScanner();
+    return;
+  }
+
+  state.detector = new window.BarcodeDetector({ formats: ["qr_code"] });
+  state.scannerStream = await navigator.mediaDevices.getUserMedia({
+    video: {
+      facingMode: { ideal: "environment" },
+      width: { ideal: 1280 },
+      height: { ideal: 720 }
+    },
+    audio: false
+  });
+
+  $("scanner-wrap").classList.remove("hidden");
+  setScannerStatus("กำลังเปิดกล้องหลัง...");
+  $("scanner").srcObject = state.scannerStream;
+  await $("scanner").play();
+  $("scan-toggle").textContent = "ปิดกล้องสแกน";
+  setScannerStatus("เล็ง QR ให้อยู่ในกรอบ");
+
+  const tick = async () => {
+    if (!state.scannerStream) return;
+    try {
+      const codes = await state.detector.detect($("scanner"));
+      if (codes[0]?.rawValue) {
+        $("qrValue").value = codes[0].rawValue;
+        $("form-message").textContent = `อ่าน QR ได้: ${codes[0].rawValue}`;
+        setScannerStatus("อ่าน QR สำเร็จ");
+        await lookupQr();
+        stopScanner();
+        return;
+      }
+    } catch (error) {
+      $("form-message").textContent = "สแกนไม่สำเร็จ ลองขยับมือถือหรือกรอกรหัสแทน";
+      setScannerStatus("กล้องพร้อม แต่ยังอ่าน QR ไม่สำเร็จ");
+    }
+    state.scanLoop = requestAnimationFrame(tick);
+  };
+
+  tick();
+}
+
+function stopScanner() {
+  if (state.scanLoop) {
+    cancelAnimationFrame(state.scanLoop);
+    state.scanLoop = null;
+  }
+  if (state.scannerStream) {
+    state.scannerStream.getTracks().forEach(track => track.stop());
+    state.scannerStream = null;
+  }
+  $("scanner").srcObject = null;
+  $("scanner-wrap").classList.add("hidden");
+  $("scan-toggle").textContent = "เปิดกล้องสแกน";
+  setScannerStatus("พร้อมสแกน");
+}
+
+function openNativeCameraScan() {
+  const input = $("native-scan-input");
+  if (!input) return;
+  input.value = "";
+  input.click();
+}
+
+async function handleNativeScanFile(event) {
+  const file = event.target.files?.[0];
+  if (!file) return;
+
+  if (!("BarcodeDetector" in window)) {
+    $("form-message").textContent = "เครื่องนี้ยังไม่รองรับการอ่าน QR จากรูปภาพอัตโนมัติ";
+    return;
+  }
+
+  try {
+    $("form-message").textContent = "กำลังอ่าน QR จากภาพ...";
+    const bitmap = await createImageBitmap(file);
+    const detector = new window.BarcodeDetector({ formats: ["qr_code"] });
+    const codes = await detector.detect(bitmap);
+    bitmap.close?.();
+
+    if (!codes[0]?.rawValue) {
+      $("form-message").textContent = "ไม่พบ QR ในภาพนี้ ลองถ่ายใหม่ให้ชัดขึ้น";
+      return;
+    }
+
+    $("qrValue").value = codes[0].rawValue;
+    $("form-message").textContent = `อ่าน QR จากภาพได้: ${codes[0].rawValue}`;
+    await lookupQr();
+  } catch (error) {
+    $("form-message").textContent = "อ่าน QR จากภาพไม่สำเร็จ ลองถ่ายใหม่ให้ชัดขึ้น";
+  } finally {
+    event.target.value = "";
+  }
+}
+
 function bindEvents() {
   document.querySelectorAll(".tab").forEach(button => {
     button.addEventListener("click", () => activateView(button.dataset.view));
@@ -637,6 +747,8 @@ function bindEvents() {
   $("history-refresh").addEventListener("click", refreshHistory);
   $("history-search").addEventListener("input", refreshHistory);
   $("history-action").addEventListener("change", refreshHistory);
+  $("native-scan-button").addEventListener("click", openNativeCameraScan);
+  $("native-scan-input").addEventListener("change", handleNativeScanFile);
   $("scan-toggle").addEventListener("click", startScanner);
 }
 

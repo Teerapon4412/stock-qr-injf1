@@ -13,6 +13,66 @@ const STORE_FILE = path.join(DATA_DIR, "store.json");
 const CATALOG_FILE = path.join(DATA_DIR, "code-part-catalog.json");
 const DATABASE_URL = process.env.DATABASE_URL;
 
+function normalizeScanText(value) {
+  return String(value || "")
+    .replace(/\r/g, "\n")
+    .replace(/\n+/g, "\n")
+    .replace(/[ \t]+/g, " ")
+    .trim();
+}
+
+function upperSafe(value) {
+  return String(value || "").trim().toUpperCase();
+}
+
+function extractPattern(pattern, text, fallbackIndex = 1) {
+  const match = text.match(pattern);
+  return match ? String(match[fallbackIndex] || "").trim() : "";
+}
+
+function parseScannedQr(rawValue) {
+  const normalized = normalizeScanText(rawValue);
+  if (!normalized) {
+    return {
+      rawValue: "",
+      normalizedValue: "",
+      directValue: "",
+      referenceNo: "",
+      partCode: "",
+      workOrderNo: "",
+      qty: null,
+      date: "",
+      process: "",
+      model: ""
+    };
+  }
+
+  const flattened = normalized.replace(/\n/g, " ");
+  const directValue = upperSafe(normalized);
+  const referenceCandidateMatch = flattened.match(/[A-Z]{1,4}\d{6,}(?:-\d{4,})+/i);
+  const referenceNo = upperSafe(referenceCandidateMatch ? referenceCandidateMatch[0] : "");
+  const partCode = upperSafe(referenceNo ? referenceNo.split("-")[0] : directValue);
+  const workOrderNo = upperSafe(extractPattern(/\b(WO[A-Z0-9-]{4,})\b/i, flattened));
+  const qtyRaw = extractPattern(/\bQTY\b\s*[:\-]?\s*(\d+(?:\.\d+)?)/i, flattened);
+  const qty = qtyRaw ? Number(qtyRaw) : null;
+  const date = extractPattern(/\b(20\d{2}[\/-]\d{2}[\/-]\d{2})\b/, flattened);
+  const process = extractPattern(/\bProcess\b\s*[:\-]?\s*([A-Z][A-Z0-9 _/-]{1,40}?)(?=\s+\bModel\b|$)/i, flattened);
+  const model = extractPattern(/\bModel\b\s*[:\-]?\s*([A-Z0-9][A-Z0-9 _/-]{0,40})/i, flattened);
+
+  return {
+    rawValue: String(rawValue || ""),
+    normalizedValue: normalized,
+    directValue,
+    referenceNo,
+    partCode,
+    workOrderNo,
+    qty: Number.isFinite(qty) ? qty : null,
+    date,
+    process,
+    model
+  };
+}
+
 function readPartCatalog() {
   if (!fs.existsSync(CATALOG_FILE)) {
     return [];
@@ -49,11 +109,25 @@ function writePartCatalog(catalog) {
 }
 
 function findCatalogItem(qrValue) {
-  const safeValue = String(qrValue || "").trim();
+  const safeValue = upperSafe(qrValue);
   if (!safeValue) {
     return null;
   }
   return partCatalog.find(item => item.partCode === safeValue) || null;
+}
+
+function resolveLookupKeys(qrValue) {
+  const parsed = parseScannedQr(qrValue);
+  const candidates = [parsed.directValue, parsed.referenceNo, parsed.partCode]
+    .map(value => upperSafe(value))
+    .filter(Boolean)
+    .filter((value, index, list) => list.indexOf(value) === index);
+
+  return {
+    parsed,
+    candidates,
+    primaryKey: candidates[0] || ""
+  };
 }
 
 function syncCatalogToStore(store) {
@@ -116,7 +190,7 @@ function buildCatalogFromWorkbook(buffer) {
   const grouped = new Map();
 
   for (const row of rows) {
-    const partCode = String(row["Part Code"] || row["partCode"] || row["PartCode"] || "").trim();
+    const partCode = upperSafe(row["Part Code"] || row.partCode || row.PartCode || row["PART CODE"]);
     if (!partCode) {
       continue;
     }
@@ -128,9 +202,9 @@ function buildCatalogFromWorkbook(buffer) {
       materialCodes: new Set()
     };
 
-    const partName = String(row["Part Name"] || row["partName"] || row["PartName"] || "").trim();
-    const machine = String(row.Machine || row.machine || "").trim();
-    const materialCode = String(row["Material Code"] || row.materialCode || row["MaterialCode"] || "").trim();
+    const partName = String(row["Part Name"] || row.partName || row.PartName || row["PART NAME"] || "").trim();
+    const machine = String(row.Machine || row.machine || row["MACHINE"] || "").trim();
+    const materialCode = upperSafe(row["Material Code"] || row.materialCode || row.MaterialCode || row["MATERIAL CODE"]);
 
     if (partName && !entry.partName) entry.partName = partName;
     if (machine) entry.machines.add(machine);
@@ -340,6 +414,28 @@ function syncStoreWithCatalog() {
   }
 }
 
+function buildLookupResponse({ found, qrValue, matchedQrValue = "", entityType = "", entityCode = "", entityName = "", catalogItem = null, parsed = null }) {
+  return {
+    found,
+    qrValue: String(qrValue || "").trim(),
+    matchedQrValue: matchedQrValue || entityCode || "",
+    entityType,
+    entityCode,
+    entityName,
+    machines: catalogItem ? catalogItem.machines : [],
+    materialCodes: catalogItem ? catalogItem.materialCodes : [],
+    parsed: parsed ? {
+      referenceNo: parsed.referenceNo || "",
+      partCode: parsed.partCode || "",
+      workOrderNo: parsed.workOrderNo || "",
+      qty: parsed.qty ?? null,
+      date: parsed.date || "",
+      process: parsed.process || "",
+      model: parsed.model || ""
+    } : null
+  };
+}
+
 async function importCatalog(payload) {
   const contentBase64 = String(payload.contentBase64 || "");
   if (!contentBase64) {
@@ -481,7 +577,15 @@ function computeDashboard(store) {
 }
 
 function handleCreateTransactionFile(store, payload) {
-  const qr = store.qrCodes.find(item => item.qrValue === payload.qrValue && item.isActive);
+  const { parsed, candidates } = resolveLookupKeys(payload.qrValue);
+  let qr = store.qrCodes.find(item => candidates.includes(upperSafe(item.qrValue)) && item.isActive);
+  if (!qr) {
+    const catalogItem = candidates.map(findCatalogItem).find(Boolean);
+    if (catalogItem) {
+      syncCatalogToStore(store);
+      qr = store.qrCodes.find(item => upperSafe(item.qrValue) === catalogItem.partCode && item.isActive);
+    }
+  }
   if (!qr) {
     return { statusCode: 400, payload: { error: "QR code not found." } };
   }
@@ -532,7 +636,9 @@ function handleCreateTransactionFile(store, payload) {
     statusAfterId: status ? status.id : null,
     performedBy: user.id,
     performedAt: new Date().toISOString(),
-    remark: String(payload.remark || "").trim()
+    remark: [String(payload.remark || "").trim(), parsed.referenceNo && parsed.referenceNo !== upperSafe(qr.qrValue) ? `Ref No: ${parsed.referenceNo}` : ""]
+      .filter(Boolean)
+      .join(" | ")
   };
 
   store.stockTransactions.push(transaction);
@@ -832,16 +938,27 @@ async function createTransaction(payload) {
     return { statusCode: 400, payload: { error: "Quantity must be greater than zero." } };
   }
 
+  const { parsed, candidates } = resolveLookupKeys(payload.qrValue);
+
   const client = await db.connect();
   try {
     await client.query("BEGIN");
 
-    let qrResult = await client.query("SELECT id, qr_value, entity_type, entity_id FROM qr_codes WHERE qr_value = $1 AND is_active = TRUE", [payload.qrValue]);
+    let qrResult = { rowCount: 0, rows: [] };
+    if (candidates.length) {
+      qrResult = await client.query(
+        "SELECT id, qr_value, entity_type, entity_id FROM qr_codes WHERE UPPER(qr_value) = ANY($1) AND is_active = TRUE ORDER BY id LIMIT 1",
+        [candidates]
+      );
+    }
     if (qrResult.rowCount === 0) {
-      const catalogItem = findCatalogItem(payload.qrValue);
+      const catalogItem = candidates.map(findCatalogItem).find(Boolean);
       if (catalogItem) {
         await ensureCatalogPartInDatabase(catalogItem);
-        qrResult = await client.query("SELECT id, qr_value, entity_type, entity_id FROM qr_codes WHERE qr_value = $1 AND is_active = TRUE", [payload.qrValue]);
+        qrResult = await client.query(
+          "SELECT id, qr_value, entity_type, entity_id FROM qr_codes WHERE UPPER(qr_value) = ANY($1) AND is_active = TRUE ORDER BY id LIMIT 1",
+          [candidates]
+        );
       }
     }
     if (qrResult.rowCount === 0) {
@@ -909,7 +1026,9 @@ async function createTransaction(payload) {
         status ? status.id : null,
         Number(payload.userId),
         now,
-        String(payload.remark || "").trim()
+        [String(payload.remark || "").trim(), parsed.referenceNo && parsed.referenceNo !== upperSafe(qr.qr_value) ? `Ref No: ${parsed.referenceNo}` : ""]
+          .filter(Boolean)
+          .join(" | ")
       ]
     );
 
@@ -957,32 +1076,46 @@ async function createTransaction(payload) {
 
 async function getQrLookup(qrValue) {
   const safeValue = String(qrValue || "").trim();
+  const { parsed, candidates } = resolveLookupKeys(qrValue);
   if (!safeValue) {
-    return { found: false };
+    return buildLookupResponse({ found: false, qrValue: safeValue, parsed });
   }
 
-  const catalogItem = findCatalogItem(safeValue);
+  const catalogItem = candidates.map(findCatalogItem).find(Boolean) || null;
 
   if (!db) {
     const store = readStore();
-    const qr = store.qrCodes.find(item => item.qrValue === safeValue && item.isActive);
+    const qr = store.qrCodes.find(item => candidates.includes(upperSafe(item.qrValue)) && item.isActive);
     if (!qr) {
-      return { found: false, qrValue: safeValue };
+      if (catalogItem) {
+        return buildLookupResponse({
+          found: true,
+          qrValue: safeValue,
+          matchedQrValue: catalogItem.partCode,
+          entityType: "PART",
+          entityCode: catalogItem.partCode,
+          entityName: catalogItem.partName || catalogItem.partCode,
+          catalogItem,
+          parsed
+        });
+      }
+      return buildLookupResponse({ found: false, qrValue: safeValue, parsed });
     }
 
     const entity = resolveEntity(store, qr.entityType, qr.entityId);
-    return {
+    return buildLookupResponse({
       found: true,
       qrValue: safeValue,
+      matchedQrValue: qr.qrValue,
       entityType: qr.entityType,
-      entityCode: entity ? entity.code : safeValue,
-      entityName: entity ? entity.name : (catalogItem ? catalogItem.partName : safeValue),
-      machines: catalogItem ? catalogItem.machines : [],
-      materialCodes: catalogItem ? catalogItem.materialCodes : []
-    };
+      entityCode: entity ? entity.code : qr.qrValue,
+      entityName: entity ? entity.name : (catalogItem ? catalogItem.partName : qr.qrValue),
+      catalogItem,
+      parsed
+    });
   }
 
-  const result = await db.query(
+  const result = candidates.length ? await db.query(
     `SELECT
        q.qr_value,
        q.entity_type,
@@ -993,36 +1126,40 @@ async function getQrLookup(qrValue) {
      LEFT JOIN boxes b ON q.entity_type = 'BOX' AND b.id = q.entity_id
      LEFT JOIN jobs j ON q.entity_type = 'JOB' AND j.id = q.entity_id
      LEFT JOIN work_orders wo ON q.entity_type = 'WORK_ORDER' AND wo.id = q.entity_id
-     WHERE q.qr_value = $1 AND q.is_active = TRUE`,
-    [safeValue]
-  );
+     WHERE UPPER(q.qr_value) = ANY($1) AND q.is_active = TRUE
+     ORDER BY q.id
+     LIMIT 1`,
+    [candidates]
+  ) : { rowCount: 0, rows: [] };
 
   if (result.rowCount === 0 && catalogItem) {
-    return {
+    return buildLookupResponse({
       found: true,
       qrValue: safeValue,
+      matchedQrValue: catalogItem.partCode,
       entityType: "PART",
       entityCode: catalogItem.partCode,
       entityName: catalogItem.partName || catalogItem.partCode,
-      machines: catalogItem.machines,
-      materialCodes: catalogItem.materialCodes
-    };
+      catalogItem,
+      parsed
+    });
   }
 
   if (result.rowCount === 0) {
-    return { found: false, qrValue: safeValue };
+    return buildLookupResponse({ found: false, qrValue: safeValue, parsed });
   }
 
   const row = result.rows[0];
-  return {
+  return buildLookupResponse({
     found: true,
     qrValue: safeValue,
+    matchedQrValue: row.qr_value,
     entityType: row.entity_type,
-    entityCode: row.entity_code || safeValue,
-    entityName: row.entity_name || (catalogItem ? catalogItem.partName : safeValue),
-    machines: catalogItem ? catalogItem.machines : [],
-    materialCodes: catalogItem ? catalogItem.materialCodes : []
-  };
+    entityCode: row.entity_code || row.qr_value,
+    entityName: row.entity_name || (catalogItem ? catalogItem.partName : row.qr_value),
+    catalogItem,
+    parsed
+  });
 }
 
 function parseMasterEntity(entity) {

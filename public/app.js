@@ -4,6 +4,7 @@ const state = {
   detector: null,
   scanLoop: null,
   lookupTimer: null,
+  lastLookup: null,
   masterSearch: "",
   masterEditing: null,
   masters: {
@@ -47,9 +48,24 @@ function setLookupMeta(lines) {
   });
 }
 
+function parsedLines(parsed) {
+  if (!parsed) return [];
+
+  const lines = [];
+  if (parsed.referenceNo) lines.push(`Ref No: ${parsed.referenceNo}`);
+  if (parsed.partCode) lines.push(`Part Code: ${parsed.partCode}`);
+  if (parsed.workOrderNo) lines.push(`WO: ${parsed.workOrderNo}`);
+  if (parsed.qty !== null && parsed.qty !== undefined && parsed.qty !== "") lines.push(`QR Qty: ${parsed.qty}`);
+  if (parsed.date) lines.push(`Date: ${parsed.date}`);
+  if (parsed.process) lines.push(`Process: ${parsed.process}`);
+  if (parsed.model) lines.push(`Model: ${parsed.model}`);
+  return lines;
+}
+
 function renderLookup(result) {
   const card = $("lookup-card");
   if (!card) return;
+  state.lastLookup = result || null;
 
   if (!result || !result.qrValue) {
     card.classList.add("hidden");
@@ -62,15 +78,19 @@ function renderLookup(result) {
   card.classList.remove("hidden");
 
   if (!result.found) {
-    $("lookup-title").textContent = "QR not found";
+    $("lookup-title").textContent = result.parsed?.partCode ? "Part not found in master" : "QR not found";
     $("lookup-code").textContent = result.qrValue;
-    setLookupMeta(["Add this code to master data before saving."]);
+    setLookupMeta([
+      ...parsedLines(result.parsed),
+      "Add this part code to master data before saving."
+    ]);
     return;
   }
 
   $("lookup-title").textContent = result.entityName || result.entityCode || result.qrValue;
-  $("lookup-code").textContent = `${result.entityType} | ${result.entityCode || result.qrValue}`;
-  const lines = [];
+  $("lookup-code").textContent = `${result.entityType} | ${result.entityCode || result.matchedQrValue || result.qrValue}`;
+  const lines = [...parsedLines(result.parsed)];
+  if (result.matchedQrValue && result.matchedQrValue !== result.qrValue) lines.push(`Matched Part QR: ${result.matchedQrValue}`);
   if (result.machines && result.machines.length) lines.push(`Machine: ${result.machines.join(", ")}`);
   if (result.materialCodes && result.materialCodes.length) lines.push(`Material: ${result.materialCodes.join(", ")}`);
   setLookupMeta(lines);
@@ -99,6 +119,40 @@ function scheduleLookup() {
       $("form-message").textContent = error.message;
     });
   }, 180);
+}
+
+async function lookupQr() {
+  const qrValue = $("qrValue").value.trim();
+  if (!qrValue) {
+    renderLookup(null);
+    return;
+  }
+
+  const result = await api(`/api/lookup/qr?value=${encodeURIComponent(qrValue)}`);
+  renderLookup(result);
+
+  if (result.parsed?.qty && (!$("qty").value || Number($("qty").value) === 1)) {
+    $("qty").value = result.parsed.qty;
+  }
+
+  if (result.parsed?.workOrderNo && state.bootstrap?.workOrders?.length) {
+    const matchedWorkOrder = state.bootstrap.workOrders.find(item => item.workOrderNo === result.parsed.workOrderNo);
+    if (matchedWorkOrder) {
+      $("workOrderId").value = matchedWorkOrder.id;
+    }
+  }
+
+  if (!result.found) {
+    $("form-message").textContent = result.parsed?.partCode
+      ? `ยังไม่พบ Part Code ${result.parsed.partCode} ใน master`
+      : "QR ยังไม่ถูกจับคู่กับข้อมูล master";
+    return;
+  }
+
+  const currentMessage = $("form-message").textContent;
+  if (currentMessage === "QR ยังไม่ถูกจับคู่กับข้อมูล master" || currentMessage.startsWith("ยังไม่พบ Part Code ")) {
+    $("form-message").textContent = "";
+  }
 }
 
 function renderOptions(select, items, placeholder, valueKey, labelBuilder) {

@@ -1,1 +1,1916 @@
-[]
+[
+  {
+    "partCode": "609551",
+    "partName": "INST I190, LH 07 N743",
+    "machines": [
+      "MC 11"
+    ],
+    "materialCodes": [
+      "120702"
+    ]
+  },
+  {
+    "partCode": "610200",
+    "partName": "AAT bumper 97 U 268",
+    "machines": [
+      "MC 7"
+    ],
+    "materialCodes": [
+      "120312"
+    ]
+  },
+  {
+    "partCode": "650080",
+    "partName": "AAT bumper 97 U LWR",
+    "machines": [
+      "MC 7"
+    ],
+    "materialCodes": [
+      "120312"
+    ]
+  },
+  {
+    "partCode": "688631",
+    "partName": "INST I190, RH 07 N743",
+    "machines": [
+      "MC 11"
+    ],
+    "materialCodes": [
+      "120702"
+    ]
+  },
+  {
+    "partCode": "FA6000004920",
+    "partName": "I/P SI TR",
+    "machines": [
+      "MC 16"
+    ],
+    "materialCodes": [
+      "RB1000000672"
+    ]
+  },
+  {
+    "partCode": "FA6000010020",
+    "partName": "Guard ASM Fender LWR;  RH Mat Color (Grain G120) Black  K710",
+    "machines": [
+      "MC 19"
+    ],
+    "materialCodes": [
+      "RB1000001042"
+    ]
+  },
+  {
+    "partCode": "FA6000010030",
+    "partName": "Guard ASM Fender LWR;  LH Mat Color (Grain G120) Black  K710",
+    "machines": [
+      "MC 19"
+    ],
+    "materialCodes": [
+      "RB1000001042"
+    ]
+  },
+  {
+    "partCode": "FA6000028441",
+    "partName": "Panel  INST LWR;  (RG04) RHD, HI Grade",
+    "machines": [
+      "MC 11"
+    ],
+    "materialCodes": [
+      "RB1000000122"
+    ]
+  },
+  {
+    "partCode": "FA6000036760",
+    "partName": "Trim ASM Tailgate LWR ;  (RJ01)",
+    "machines": [
+      "MC 18"
+    ],
+    "materialCodes": [
+      "RB1000000142"
+    ]
+  },
+  {
+    "partCode": "FA6000036941",
+    "partName": "Panel ASM INST LWR CTR;  RHD",
+    "machines": [
+      "MC 13"
+    ],
+    "materialCodes": [
+      "RB1000000122"
+    ]
+  },
+  {
+    "partCode": "FA6000037261",
+    "partName": "Panel INST LWR;  (RG04) LHD, HI Grade",
+    "machines": [
+      "MC 11"
+    ],
+    "materialCodes": [
+      "RB1000000122"
+    ]
+  },
+  {
+    "partCode": "FA6000041372",
+    "partName": "Grille ASM Soft Nose Support;",
+    "machines": [
+      "MC 16"
+    ],
+    "materialCodes": [
+      "RB1000001421"
+    ]
+  },
+  {
+    "partCode": "FA6000046770",
+    "partName": "Panel ASM INST LWR CTR;  LHD",
+    "machines": [
+      "MC 13"
+    ],
+    "materialCodes": [
+      "RB1000000122"
+    ]
+  },
+  {
+    "partCode": "FA6000049111",
+    "partName": "Panel INST LWR;  (RJ05) LHD, HI-Greade (Cup Holder W/O",
+    "machines": [
+      "MC 11"
+    ],
+    "materialCodes": [
+      "RB1000000122"
+    ]
+  },
+  {
+    "partCode": "FA6000049121",
+    "partName": "Panel INST LWR;  RG10 LHD, HI-Grade, Cup HLDR W/O",
+    "machines": [
+      "MC 11"
+    ],
+    "materialCodes": [
+      "RB1000000122"
+    ]
+  },
+  {
+    "partCode": "FA6000049161",
+    "partName": "Panel INST LWR;  RG10 RHD, HI-Grade, Cup HLDR W/O",
+    "machines": [
+      "MC 11"
+    ],
+    "materialCodes": [
+      "RB1000000122"
+    ]
+  },
+  {
+    "partCode": "FA6000049171",
+    "partName": "Panel INST LWR;  (RJ05) RHD, HI-Greade (Cup Holder W/O",
+    "machines": [
+      "MC 11"
+    ],
+    "materialCodes": [
+      "RB1000000122"
+    ]
+  },
+  {
+    "partCode": "FA6000051650",
+    "partName": "Panel INST LWR;  RG10 NCAP RHD, HI-Grade, Cup HLDR NCAP  W/O",
+    "machines": [
+      "MC 11"
+    ],
+    "materialCodes": [
+      "RB1000000122"
+    ]
+  },
+  {
+    "partCode": "FA6000051660",
+    "partName": "INST LWR;  RJ05 NCAP RHD, Hi-Grade, W/O Sound Block ,Cup Holder NCAP",
+    "machines": [
+      "MC 11"
+    ],
+    "materialCodes": [
+      "RB1000000122"
+    ]
+  },
+  {
+    "partCode": "FA6000051670",
+    "partName": "Panel  INST LWR;  RG10 NCAP LHD, HI-Grade, Cup HLDR NCAP  W/O",
+    "machines": [
+      "MC 11"
+    ],
+    "materialCodes": [
+      "RB1000000122"
+    ]
+  },
+  {
+    "partCode": "FK6000006480",
+    "partName": "Bumper Side; RH VC67 (INJ), KIJI K701",
+    "machines": [
+      "MC 7"
+    ],
+    "materialCodes": [
+      "RB1000001702"
+    ]
+  },
+  {
+    "partCode": "FK6000006490",
+    "partName": "Bumper Side; LH VC67 (INJ), KIJI K701",
+    "machines": [
+      "MC 7"
+    ],
+    "materialCodes": [
+      "RB1000001702"
+    ]
+  },
+  {
+    "partCode": "FN6000000560",
+    "partName": "Grille 4X Black K701",
+    "machines": [
+      "MC 19"
+    ],
+    "materialCodes": [
+      "120560"
+    ]
+  },
+  {
+    "partCode": "FN6000001280",
+    "partName": "MOLDING FRT BPR RJ08 RH",
+    "machines": [
+      "MC 10"
+    ],
+    "materialCodes": [
+      "RB1000001252"
+    ]
+  },
+  {
+    "partCode": "FN6000001290",
+    "partName": "MOLDING FRT BPR RJ08 LH",
+    "machines": [
+      "MC 10"
+    ],
+    "materialCodes": [
+      "RB1000001252"
+    ]
+  },
+  {
+    "partCode": "FN6000001320",
+    "partName": "Guide Air FRT BPR;  RH RJ08",
+    "machines": [
+      "MC 16"
+    ],
+    "materialCodes": [
+      "RB1000001252"
+    ]
+  },
+  {
+    "partCode": "FN6000001330",
+    "partName": "Guide Air FRT BPR;  LH RJ08",
+    "machines": [
+      "MC 16"
+    ],
+    "materialCodes": [
+      "RB1000001252"
+    ]
+  },
+  {
+    "partCode": "FN6000001630",
+    "partName": "Cover FRT BPR Fascia OPG Wide;  RH RG21 W/Fog",
+    "machines": [
+      "MC 10"
+    ],
+    "materialCodes": [
+      "RB1000001252"
+    ]
+  },
+  {
+    "partCode": "FN6000001640",
+    "partName": "Cover FRT BPR Fascia OPG Wide;  RH RG21 W/Fog",
+    "machines": [
+      "MC 10"
+    ],
+    "materialCodes": [
+      "RB1000001252"
+    ]
+  },
+  {
+    "partCode": "FN6000001650",
+    "partName": "Cover FRT BPR OPG Wide; RH  RG21 W/O Fog, (Grain G121)  Color Black K701",
+    "machines": [
+      "MC 10"
+    ],
+    "materialCodes": [
+      "RB1000001252"
+    ]
+  },
+  {
+    "partCode": "FN6000001660",
+    "partName": "Cover FRT BPR  OPG Wide; LH  RG21 W/O Fog, (Grain G121)  Color Black K701",
+    "machines": [
+      "MC 10"
+    ],
+    "materialCodes": [
+      "RB1000001252"
+    ]
+  },
+  {
+    "partCode": "FP6000004210",
+    "partName": "Cover FRT BPR Fascia OPG Narrow;  RH RG21 W/O Fog,",
+    "machines": [
+      "MC 10"
+    ],
+    "materialCodes": [
+      "RB1000001252"
+    ]
+  },
+  {
+    "partCode": "FP6000004220",
+    "partName": "Cover FRT BPR Fascia OPG Narrow;  LH RG21 W/O Fog,",
+    "machines": [
+      "MC 10"
+    ],
+    "materialCodes": [
+      "RB1000001252"
+    ]
+  },
+  {
+    "partCode": "FP6000004230",
+    "partName": "Cover FRT BPR Fascia OPG Narrow;  RH RG21 W/O Fog,",
+    "machines": [
+      "MC 10"
+    ],
+    "materialCodes": [
+      "RB1000001252"
+    ]
+  },
+  {
+    "partCode": "FP6000004240",
+    "partName": "Cover FRT BPR Fascia OPG Narrow;  LH RG21 W/Fog,",
+    "machines": [
+      "MC 10"
+    ],
+    "materialCodes": [
+      "RB1000001252"
+    ]
+  },
+  {
+    "partCode": "FS6000000070",
+    "partName": "MOLDING FRT BPR RJ08 RH",
+    "machines": [
+      "MC 10"
+    ],
+    "materialCodes": [
+      "RB1000001252"
+    ]
+  },
+  {
+    "partCode": "FS6000000080",
+    "partName": "MOLDING FRT BPR RJ08 LH",
+    "machines": [
+      "MC 10"
+    ],
+    "materialCodes": [
+      "RB1000001252"
+    ]
+  },
+  {
+    "partCode": "WA6000000510",
+    "partName": "Lid Box;  RHD K701",
+    "machines": [
+      "MC 12",
+      "MC 10",
+      "MC 13"
+    ],
+    "materialCodes": [
+      "140250"
+    ]
+  },
+  {
+    "partCode": "WA6000000520",
+    "partName": "Lid Box;  LHD K701",
+    "machines": [
+      "MC 12",
+      "MC 10",
+      "MC 13"
+    ],
+    "materialCodes": [
+      "140250"
+    ]
+  },
+  {
+    "partCode": "WI6000000130",
+    "partName": "RR Door RT-50, RH  N052",
+    "machines": [
+      "MC 7"
+    ],
+    "materialCodes": [
+      "RB1000000192"
+    ]
+  },
+  {
+    "partCode": "WI6000000140",
+    "partName": "RR Door RT-50, LH  N052",
+    "machines": [
+      "MC 7"
+    ],
+    "materialCodes": [
+      "RB1000000192"
+    ]
+  },
+  {
+    "partCode": "WI6000000270",
+    "partName": "FRT S/D TR;  MAN / RH N052",
+    "machines": [
+      "MC 7",
+      "MC 18"
+    ],
+    "materialCodes": [
+      "RB1000000192"
+    ]
+  },
+  {
+    "partCode": "WI6000000290",
+    "partName": "FRT S/D TR;  MAN / RH N052",
+    "machines": [
+      "MC 7",
+      "MC 18",
+      "MC 19"
+    ],
+    "materialCodes": [
+      "RB1000000192"
+    ]
+  },
+  {
+    "partCode": "WI6000000460",
+    "partName": "INST;  LHD  , RT50 N052",
+    "machines": [
+      "MC 11"
+    ],
+    "materialCodes": [
+      "RB1000000112"
+    ]
+  },
+  {
+    "partCode": "WI6000000560",
+    "partName": "Cover IP ASST: W/O PAB LHD  (N052)",
+    "machines": [
+      "MC 10",
+      "MC 12",
+      "MC 13"
+    ],
+    "materialCodes": [
+      "RB1000000112"
+    ]
+  },
+  {
+    "partCode": "WI6000000570",
+    "partName": "Cover IP ASST: W/O PAB RHD  (N052)",
+    "machines": [
+      "MC 10",
+      "MC 12",
+      "MC 13"
+    ],
+    "materialCodes": [
+      "RB1000000112"
+    ]
+  },
+  {
+    "partCode": "WK6000002080",
+    "partName": "Grille Radiator Molding CTR RG10 Chrome",
+    "machines": [
+      "MC 13"
+    ],
+    "materialCodes": [
+      "RB1000001271"
+    ]
+  },
+  {
+    "partCode": "WK6000002200",
+    "partName": "GRILLE FRT FASCIA UPR RG14 LH ABS",
+    "machines": [
+      "MC 13"
+    ],
+    "materialCodes": [
+      "RB1000001271"
+    ]
+  },
+  {
+    "partCode": "WK6000002210",
+    "partName": "GRILLE FRT FASCIA UPR RG14 RH ABS",
+    "machines": [
+      "MC 13"
+    ],
+    "materialCodes": [
+      "RB1000001271"
+    ]
+  },
+  {
+    "partCode": "WK6000002220",
+    "partName": "GRILLE FRT BPR MOLDING LWR RG14 RH ABS",
+    "machines": [
+      "MC 10"
+    ],
+    "materialCodes": [
+      "RB1000001271"
+    ]
+  },
+  {
+    "partCode": "WK6000002230",
+    "partName": "GRILLE FRT BPR MOLDING LWR RG14 RH ABS",
+    "machines": [
+      "MC 10"
+    ],
+    "materialCodes": [
+      "RB1000001271"
+    ]
+  },
+  {
+    "partCode": "WK6000002240",
+    "partName": "GRILLE FRT BMPR MOLDING LWR CTR RG14 ABS",
+    "machines": [
+      "MC 10"
+    ],
+    "materialCodes": [
+      "RB1000001271"
+    ]
+  },
+  {
+    "partCode": "WK6000003770",
+    "partName": "PAD DR SOFT SKIN RH RJ08 K701",
+    "machines": [
+      "MC 15"
+    ],
+    "materialCodes": [
+      "RB1000001671"
+    ]
+  },
+  {
+    "partCode": "WK6000003780",
+    "partName": "PAD DR SOFT SKIN RH RJ08 U419",
+    "machines": [
+      "MC 15"
+    ],
+    "materialCodes": [
+      "RB1000001681"
+    ]
+  },
+  {
+    "partCode": "WK6000003820",
+    "partName": "PAD DR SOFT SKIN LH RJ08 U419",
+    "machines": [
+      "MC 15"
+    ],
+    "materialCodes": [
+      "RB1000001681"
+    ]
+  },
+  {
+    "partCode": "WK6000003840",
+    "partName": "Pad AS; Cover ASM I/P T/PNL;  RJ08 RHD, Soft Skin  K701",
+    "machines": [
+      "MC 15"
+    ],
+    "materialCodes": [
+      "RB1000001671"
+    ]
+  },
+  {
+    "partCode": "WN6000000030",
+    "partName": "Lid Box;  RHD K701",
+    "machines": [
+      "MC 12",
+      "MC 13",
+      "MC 10"
+    ],
+    "materialCodes": [
+      "140250"
+    ]
+  },
+  {
+    "partCode": "WN6000000040",
+    "partName": "Lid Box;  LHD K701",
+    "machines": [
+      "MC 10",
+      "MC 12",
+      "MC 13"
+    ],
+    "materialCodes": [
+      "140250"
+    ]
+  },
+  {
+    "partCode": "WN6000000070",
+    "partName": "Garnish  Frt  Door ;RH Black  K701",
+    "machines": [
+      "MC 15"
+    ],
+    "materialCodes": [
+      "140250"
+    ]
+  },
+  {
+    "partCode": "WN6000000080",
+    "partName": "Garnish  Frt  Door ;LH Black  K701",
+    "machines": [
+      "MC 15"
+    ],
+    "materialCodes": [
+      "140250"
+    ]
+  },
+  {
+    "partCode": "WN6000000720",
+    "partName": "FRT S/D TR;  PWR / RH N052 ( No.1 )",
+    "machines": [
+      "MC 7",
+      "MC 18"
+    ],
+    "materialCodes": [
+      "RB1000000192"
+    ]
+  },
+  {
+    "partCode": "WN6000000740",
+    "partName": "FRT S/D TR;  PWR / RH N052 ( No.1 )",
+    "machines": [
+      "MC 7",
+      "MC 18",
+      "MC 19"
+    ],
+    "materialCodes": [
+      "RB1000000192"
+    ]
+  },
+  {
+    "partCode": "WN6000002240",
+    "partName": "Cover Extension; RH (Black) K701",
+    "machines": [
+      "MC 10"
+    ],
+    "materialCodes": [
+      "RB1000000902"
+    ]
+  },
+  {
+    "partCode": "WN6000002250",
+    "partName": "Cover Extension; LH (Black) K701",
+    "machines": [
+      "MC 10"
+    ],
+    "materialCodes": [
+      "RB1000000902"
+    ]
+  },
+  {
+    "partCode": "WN6000002510",
+    "partName": "INST;  RHD  , RT50 N052",
+    "machines": [
+      "MC 11"
+    ],
+    "materialCodes": [
+      "RB1000000112"
+    ]
+  },
+  {
+    "partCode": "WN6000002580",
+    "partName": "LID OTR Utility   RHD (RF20)  (Grain G157) (RF20)",
+    "machines": [
+      "MC 13"
+    ],
+    "materialCodes": [
+      "140250"
+    ]
+  },
+  {
+    "partCode": "WN6000002600",
+    "partName": "Lid Utility Box Inner RHD (RF20)",
+    "machines": [
+      "MC 13"
+    ],
+    "materialCodes": [
+      "140250"
+    ]
+  },
+  {
+    "partCode": "WN6000002610",
+    "partName": "FRT S/D TR;  LWR RH U728 RF20",
+    "machines": [
+      "MC 7",
+      "MC 18",
+      "MC 19"
+    ],
+    "materialCodes": [
+      "RB1000001202"
+    ]
+  },
+  {
+    "partCode": "WN6000002620",
+    "partName": "FRT S/D TR;  LWR RH N052 RF20",
+    "machines": [
+      "MC 7",
+      "MC 18",
+      "MC 19"
+    ],
+    "materialCodes": [
+      "RB1000000192"
+    ]
+  },
+  {
+    "partCode": "WN6000002630",
+    "partName": "FRT S/D TR;  LWR LH U728 RF20",
+    "machines": [
+      "MC 7",
+      "MC 18",
+      "MC 19"
+    ],
+    "materialCodes": [
+      "RB1000001202"
+    ]
+  },
+  {
+    "partCode": "WN6000002640",
+    "partName": "FRT S/D TR;  LWR LH N052 RF20",
+    "machines": [
+      "MC 7",
+      "MC 18",
+      "MC 19"
+    ],
+    "materialCodes": [
+      "RB1000000192"
+    ]
+  },
+  {
+    "partCode": "WN6000002720",
+    "partName": "RR  LWR;  RH (RF20)  U728",
+    "machines": [
+      "MC 19"
+    ],
+    "materialCodes": [
+      "RB1000001202"
+    ]
+  },
+  {
+    "partCode": "WN6000002730",
+    "partName": "RR  LWR;  RH (RF20)  N052",
+    "machines": [
+      "MC 19"
+    ],
+    "materialCodes": [
+      "RB1000000192"
+    ]
+  },
+  {
+    "partCode": "WN6000002740",
+    "partName": "RR  LWR;  LH (RF20)  U728",
+    "machines": [
+      "MC 19"
+    ],
+    "materialCodes": [
+      "RB1000001202"
+    ]
+  },
+  {
+    "partCode": "WN6000002750",
+    "partName": "RR  LWR;  LH (RF20)  N052",
+    "machines": [
+      "MC 19"
+    ],
+    "materialCodes": [
+      "RB1000000192"
+    ]
+  },
+  {
+    "partCode": "WN6000003040",
+    "partName": "Panel INST LWR RH",
+    "machines": [
+      "MC 11"
+    ],
+    "materialCodes": [
+      "RB1000000122"
+    ]
+  },
+  {
+    "partCode": "WN6000003100",
+    "partName": "BELT REINFORCEMENT RR RH",
+    "machines": [
+      "MC 10",
+      "MC 13",
+      "MC 15"
+    ],
+    "materialCodes": [
+      "RB1000001292"
+    ]
+  },
+  {
+    "partCode": "WN6000003110",
+    "partName": "BELT REINFORCEMENT RR LH",
+    "machines": [
+      "MC 10",
+      "MC 13",
+      "MC 15"
+    ],
+    "materialCodes": [
+      "RB1000001292"
+    ]
+  },
+  {
+    "partCode": "WN6000003160",
+    "partName": "GRILLE SPEAKER RR RH",
+    "machines": [
+      "MC 12",
+      "MC 13"
+    ],
+    "materialCodes": [
+      "RB1000001292"
+    ]
+  },
+  {
+    "partCode": "WN6000003170",
+    "partName": "GRILLE SPEAKER RR LH",
+    "machines": [
+      "MC 12",
+      "MC 13"
+    ],
+    "materialCodes": [
+      "RB1000001292"
+    ]
+  },
+  {
+    "partCode": "WN6000003180",
+    "partName": "GRILLE SPEAKER FRT RH",
+    "machines": [
+      "MC 12",
+      "MC 15"
+    ],
+    "materialCodes": [
+      "RB1000001292"
+    ]
+  },
+  {
+    "partCode": "WN6000003190",
+    "partName": "GRILLE SPEAKER FRT LH",
+    "machines": [
+      "MC 12",
+      "MC 15"
+    ],
+    "materialCodes": [
+      "RB1000001292"
+    ]
+  },
+  {
+    "partCode": "WN6000003260",
+    "partName": "FRT S/D TR LWR;  RH ( RG01 ) K701",
+    "machines": [
+      "MC 16",
+      "MC 18"
+    ],
+    "materialCodes": [
+      "RB1000001292"
+    ]
+  },
+  {
+    "partCode": "WN6000003270",
+    "partName": "FRT S/D TR LWR;  LH ( RG01 ) K701",
+    "machines": [
+      "MC 16",
+      "MC 18"
+    ],
+    "materialCodes": [
+      "RB1000001292"
+    ]
+  },
+  {
+    "partCode": "WN6000003280",
+    "partName": "INST UPR Base;  RHD, W/O FCW (RG01) K701",
+    "machines": [
+      "MC 7"
+    ],
+    "materialCodes": [
+      "RB1000000122"
+    ]
+  },
+  {
+    "partCode": "WN6000003290",
+    "partName": "AIR BAG CHUTER PAB SOFT RHD",
+    "machines": [
+      "MC 10",
+      "MC 12"
+    ],
+    "materialCodes": [
+      "RB1000001380"
+    ]
+  },
+  {
+    "partCode": "WN6000003301",
+    "partName": "INST UPR;  RG01 RHD (Soft )  K701",
+    "machines": [
+      "MC 16",
+      "MC 19"
+    ],
+    "materialCodes": [
+      "RB1000000122"
+    ]
+  },
+  {
+    "partCode": "WN6000003310",
+    "partName": "AIR BAG CHUTER PAB HARD RHD",
+    "machines": [
+      "MC 10",
+      "MC 12"
+    ],
+    "materialCodes": [
+      "RB1000001380"
+    ]
+  },
+  {
+    "partCode": "WN6000003321",
+    "partName": "INST UPR;  RG01 RHD (Hard ) K701",
+    "machines": [
+      "MC 16",
+      "MC 19"
+    ],
+    "materialCodes": [
+      "RB1000000122"
+    ]
+  },
+  {
+    "partCode": "WN6000003680",
+    "partName": "INST UPR  RHD (REG), W/ FCW,",
+    "machines": [
+      "MC 19"
+    ],
+    "materialCodes": [
+      "RB1000000122"
+    ]
+  },
+  {
+    "partCode": "WN6000003690",
+    "partName": "INST UPR  RHD (REG), W/O FCW,",
+    "machines": [
+      "MC 19"
+    ],
+    "materialCodes": [
+      "RB1000000122"
+    ]
+  },
+  {
+    "partCode": "WN6000003700",
+    "partName": "AIR BAG CHUTER PAB SOFT LH RG01",
+    "machines": [
+      "MC 10",
+      "MC 12"
+    ],
+    "materialCodes": [
+      "RB1000001380"
+    ]
+  },
+  {
+    "partCode": "WN6000003710",
+    "partName": "AIR BAG CHUTER PAB HARD LH RG01",
+    "machines": [
+      "MC 12"
+    ],
+    "materialCodes": [
+      "RB1000001380"
+    ]
+  },
+  {
+    "partCode": "WN6000003810",
+    "partName": "PAD DR SOFT SKIN LH RJ08 K701",
+    "machines": [
+      "MC 15"
+    ],
+    "materialCodes": [
+      "RB1000001671"
+    ]
+  },
+  {
+    "partCode": "WN6000003820",
+    "partName": "Grille Radiator; (4X) DK ( Gray)",
+    "machines": [
+      "MC 19"
+    ],
+    "materialCodes": [
+      "RB6000001111"
+    ]
+  },
+  {
+    "partCode": "WN6000003840",
+    "partName": "INST UPR;  LHD (REG), W/FCW",
+    "machines": [
+      "MC 19"
+    ],
+    "materialCodes": [
+      "RB1000000122"
+    ]
+  },
+  {
+    "partCode": "WN6000003850",
+    "partName": "INST UPR  LHD (REG), W/O FCW",
+    "machines": [
+      "MC 19"
+    ],
+    "materialCodes": [
+      "RB1000000122"
+    ]
+  },
+  {
+    "partCode": "WN6000003860",
+    "partName": "INST (UPR Base)  W/O FCW,LHD K701",
+    "machines": [
+      "MC 7"
+    ],
+    "materialCodes": [
+      "RB1000000122"
+    ]
+  },
+  {
+    "partCode": "WN6000003870",
+    "partName": "INST  (UPR Base) ,W/FCW,LHD  K701",
+    "machines": [
+      "MC 7"
+    ],
+    "materialCodes": [
+      "RB1000000122"
+    ]
+  },
+  {
+    "partCode": "WN6000003890",
+    "partName": "INST UPR  UPR LH (Soft)  K701",
+    "machines": [
+      "MC 7",
+      "MC 16"
+    ],
+    "materialCodes": [
+      "RB1000000122"
+    ]
+  },
+  {
+    "partCode": "WN6000003910",
+    "partName": "INST UPR;  RG01 LHD ( Hard ) K701",
+    "machines": [
+      "MC 7",
+      "MC 16"
+    ],
+    "materialCodes": [
+      "RB1000000122"
+    ]
+  },
+  {
+    "partCode": "WN6000003920",
+    "partName": "INST UPR Base;  RHD, W/FCW (RG01) K701",
+    "machines": [
+      "MC 7"
+    ],
+    "materialCodes": [
+      "RB1000000122"
+    ]
+  },
+  {
+    "partCode": "WN6000004040",
+    "partName": "REINFORCEMENT FRT RH",
+    "machines": [
+      "MC 15"
+    ],
+    "materialCodes": [
+      "RB1000001292"
+    ]
+  },
+  {
+    "partCode": "WN6000004050",
+    "partName": "REINFORCEMENT FRT LH",
+    "machines": [
+      "MC 15"
+    ],
+    "materialCodes": [
+      "RB1000001292"
+    ]
+  },
+  {
+    "partCode": "WN6000004061",
+    "partName": "Panel RR S/D TR UPR; RH RG04",
+    "machines": [
+      "MC 19"
+    ],
+    "materialCodes": [
+      "RB1000001292"
+    ]
+  },
+  {
+    "partCode": "WN6000004071",
+    "partName": "Panel RR S/D TR UPR; LH RG04",
+    "machines": [
+      "MC 19"
+    ],
+    "materialCodes": [
+      "RB1000001292"
+    ]
+  },
+  {
+    "partCode": "WN6000004080",
+    "partName": "BELT REINF RR RH",
+    "machines": [
+      "MC 10"
+    ],
+    "materialCodes": [
+      "RB1000001292"
+    ]
+  },
+  {
+    "partCode": "WN6000004090",
+    "partName": "BELT REINF RR LH",
+    "machines": [
+      "MC 10"
+    ],
+    "materialCodes": [
+      "RB1000001292"
+    ]
+  },
+  {
+    "partCode": "WN6000004100",
+    "partName": "Panel INST UPR Base;  RG04 RHD, W/O FCW",
+    "machines": [
+      "MC 7",
+      "MC 19"
+    ],
+    "materialCodes": [
+      "RB1000000122"
+    ]
+  },
+  {
+    "partCode": "WN6000004110",
+    "partName": "Panel INST UPR Base;  RG04 RHD, W/FCW",
+    "machines": [
+      "MC 7",
+      "MC 19"
+    ],
+    "materialCodes": [
+      "RB1000000122"
+    ]
+  },
+  {
+    "partCode": "WN6000004130",
+    "partName": "CHUTER PAB RHD RG04",
+    "machines": [
+      "MC 12"
+    ],
+    "materialCodes": [
+      "RB1000001380"
+    ]
+  },
+  {
+    "partCode": "WN6000004270",
+    "partName": "INST UPR Base;  RHD Base Grade, W/O",
+    "machines": [
+      "MC 19"
+    ],
+    "materialCodes": [
+      "RB1000000122"
+    ]
+  },
+  {
+    "partCode": "WN6000004280",
+    "partName": "INST  (REG), W/O PAB W/O FCW,LH",
+    "machines": [
+      "MC 19"
+    ],
+    "materialCodes": [
+      "RB1000000122"
+    ]
+  },
+  {
+    "partCode": "WN6000004290",
+    "partName": "INST(Hard)  W/OPAB, LHD K701",
+    "machines": [
+      "MC 16"
+    ],
+    "materialCodes": [
+      "RB1000000122"
+    ]
+  },
+  {
+    "partCode": "WN6000004530",
+    "partName": "CHUTER PAB RH RJ01",
+    "machines": [
+      "MC 10"
+    ],
+    "materialCodes": [
+      "RB1000001380"
+    ]
+  },
+  {
+    "partCode": "WN6000004590",
+    "partName": "CHUTER PAB LH RJ01",
+    "machines": [
+      "MC 12"
+    ],
+    "materialCodes": [
+      "RB1000001380"
+    ]
+  },
+  {
+    "partCode": "WN6000004730",
+    "partName": "BELT REINFORCEMENT RR RH RJ01",
+    "machines": [
+      "MC 15"
+    ],
+    "materialCodes": [
+      "RB1000001292"
+    ]
+  },
+  {
+    "partCode": "WN6000004740",
+    "partName": "BELT REINFORCEMENT RR LH RJ01",
+    "machines": [
+      "MC 15"
+    ],
+    "materialCodes": [
+      "RB1000001292"
+    ]
+  },
+  {
+    "partCode": "WN6000004780",
+    "partName": "Panel INST UPR Base;  RG04 LH, W/O FCW",
+    "machines": [
+      "MC 7",
+      "MC 19"
+    ],
+    "materialCodes": [
+      "RB1000000122"
+    ]
+  },
+  {
+    "partCode": "WN6000004790",
+    "partName": "Panel INST UPR Base;  RG04 LH, W/FCW",
+    "machines": [
+      "MC 7",
+      "MC 19"
+    ],
+    "materialCodes": [
+      "RB1000000122"
+    ]
+  },
+  {
+    "partCode": "WN6000004810",
+    "partName": "AIR BAG CHUTER PAB LH RG04",
+    "machines": [
+      "MC 10"
+    ],
+    "materialCodes": [
+      "RB1000001380"
+    ]
+  },
+  {
+    "partCode": "WN6000004820",
+    "partName": "Pocket RR RH RG01",
+    "machines": [
+      "MC 13",
+      "MC 15"
+    ],
+    "materialCodes": [
+      "RB1000001292"
+    ]
+  },
+  {
+    "partCode": "WN6000004830",
+    "partName": "Pocket RR LH RG01",
+    "machines": [
+      "MC 13",
+      "MC 15"
+    ],
+    "materialCodes": [
+      "RB1000001292"
+    ]
+  },
+  {
+    "partCode": "WN6000004840",
+    "partName": "INST PANEL LWR CTR RH RJ01",
+    "machines": [
+      "MC 13"
+    ],
+    "materialCodes": [
+      "RB1000000122"
+    ]
+  },
+  {
+    "partCode": "WN6000004850",
+    "partName": "INST PANEL LWR CTR LH RJ01",
+    "machines": [
+      "MC 13"
+    ],
+    "materialCodes": [
+      "RB1000000122"
+    ]
+  },
+  {
+    "partCode": "WN6000004870",
+    "partName": "Panel INST UPR PAD;  RG04 RHD W/Sticker",
+    "machines": [
+      "MC 16"
+    ],
+    "materialCodes": [
+      "RB1000000122"
+    ]
+  },
+  {
+    "partCode": "WN6000004880",
+    "partName": "Panel INST UPR PAD;  RG04 LH Black K701",
+    "machines": [
+      "MC 7",
+      "MC 16"
+    ],
+    "materialCodes": [
+      "RB1000000122"
+    ]
+  },
+  {
+    "partCode": "WN6000004950",
+    "partName": "Panel INST UPR PAD;  RJ01 RHD",
+    "machines": [
+      "MC 16",
+      "MC 19"
+    ],
+    "materialCodes": [
+      "RB1000000122"
+    ]
+  },
+  {
+    "partCode": "WN6000004960",
+    "partName": "Panel INST UPR PAD;  RJ01 LHD",
+    "machines": [
+      "MC 16",
+      "MC 19"
+    ],
+    "materialCodes": [
+      "RB1000000122"
+    ]
+  },
+  {
+    "partCode": "WN6000005140",
+    "partName": "GRULLE FRT BMP MOLDING CTR RG10 ABS PAINT",
+    "machines": [
+      "MC 13"
+    ],
+    "materialCodes": [
+      "RB1000001271"
+    ]
+  },
+  {
+    "partCode": "WN6000005220",
+    "partName": "GRILLE FRT BMP MOLDING CTR RG10 ASA",
+    "machines": [
+      "MC 13"
+    ],
+    "materialCodes": [
+      "RB1000001331"
+    ]
+  },
+  {
+    "partCode": "WN6000005350",
+    "partName": "GRILLE FRT FASCIA UPR RG14 LH ASA",
+    "machines": [
+      "MC 13"
+    ],
+    "materialCodes": [
+      "RB1000001331"
+    ]
+  },
+  {
+    "partCode": "WN6000005360",
+    "partName": "GRILLE FRT FASCIA UPR RG14 LH ABS",
+    "machines": [
+      "MC 13"
+    ],
+    "materialCodes": [
+      "RB1000001271"
+    ]
+  },
+  {
+    "partCode": "WN6000005370",
+    "partName": "GRILLE FRT FASCIA UPR RG14 RH ASA",
+    "machines": [
+      "MC 13"
+    ],
+    "materialCodes": [
+      "RB1000001331"
+    ]
+  },
+  {
+    "partCode": "WN6000005380",
+    "partName": "GRILLE FRT FASCIA UPR RG14 RH ABS",
+    "machines": [
+      "MC 13"
+    ],
+    "materialCodes": [
+      "RB1000001271"
+    ]
+  },
+  {
+    "partCode": "WN6000005390",
+    "partName": "GRILLE FRT BPR MOLDING LWR RG14 LH ASA",
+    "machines": [
+      "MC 10"
+    ],
+    "materialCodes": [
+      "RB1000001331"
+    ]
+  },
+  {
+    "partCode": "WN6000005400",
+    "partName": "GRILLE FRT BPR MOLDING LWR RG14 LH ABS",
+    "machines": [
+      "MC 10"
+    ],
+    "materialCodes": [
+      "RB1000001271"
+    ]
+  },
+  {
+    "partCode": "WN6000005410",
+    "partName": "GRILLE FRT BPR MOLDING LWR RG14 LH ASA",
+    "machines": [
+      "MC 10"
+    ],
+    "materialCodes": [
+      "RB1000001331"
+    ]
+  },
+  {
+    "partCode": "WN6000005420",
+    "partName": "GRILLE FRT BPR MOLDING LWR RG14 RH ABS",
+    "machines": [
+      "MC 10"
+    ],
+    "materialCodes": [
+      "RB1000001271"
+    ]
+  },
+  {
+    "partCode": "WN6000005430",
+    "partName": "GRILLE FRT BMPR MOLDING LWR CTR RG14 ASA",
+    "machines": [
+      "MC 10"
+    ],
+    "materialCodes": [
+      "RB1000001331"
+    ]
+  },
+  {
+    "partCode": "WN6000005440",
+    "partName": "GRILLE FRT BMPR MOLDING LWR CTR RG14 ABS",
+    "machines": [
+      "MC 10"
+    ],
+    "materialCodes": [
+      "RB1000001271"
+    ]
+  },
+  {
+    "partCode": "WN6000005591",
+    "partName": "Cargo Spoiler Side Cover OTR; LH",
+    "machines": [
+      "MC 19"
+    ],
+    "materialCodes": [
+      "RB1000000070"
+    ]
+  },
+  {
+    "partCode": "WN6000005601",
+    "partName": "Cargo Spoiler Side Cover OTR; RH",
+    "machines": [
+      "MC 19"
+    ],
+    "materialCodes": [
+      "RB1000000070"
+    ]
+  },
+  {
+    "partCode": "WN6000005610",
+    "partName": "Cargo Spoiler Side Cover INR; RH",
+    "machines": [
+      "MC 19"
+    ],
+    "materialCodes": [
+      "RB1000000070"
+    ]
+  },
+  {
+    "partCode": "WN6000005620",
+    "partName": "Cargo Spoiler Side Cover INR; LH",
+    "machines": [
+      "MC 19"
+    ],
+    "materialCodes": [
+      "RB1000000070"
+    ]
+  },
+  {
+    "partCode": "WN6000005740",
+    "partName": "Extender Upper Cover; LH",
+    "machines": [
+      "MC 19"
+    ],
+    "materialCodes": [
+      "RB1000000070"
+    ]
+  },
+  {
+    "partCode": "WN6000005750",
+    "partName": "Extender Lower Cover; LH",
+    "machines": [
+      "MC 19"
+    ],
+    "materialCodes": [
+      "RB1000000070"
+    ]
+  },
+  {
+    "partCode": "WN6000005760",
+    "partName": "Extender Upper Cover; RH",
+    "machines": [
+      "MC 19"
+    ],
+    "materialCodes": [
+      "RB1000000070"
+    ]
+  },
+  {
+    "partCode": "WN6000005770",
+    "partName": "Extender Lower Cover; RH",
+    "machines": [
+      "MC 19"
+    ],
+    "materialCodes": [
+      "RB1000000070"
+    ]
+  },
+  {
+    "partCode": "WN6000005830",
+    "partName": "RJ08 PAD DR SUBSTATE RH",
+    "machines": [
+      "MC 13"
+    ],
+    "materialCodes": [
+      "RB1000000122"
+    ]
+  },
+  {
+    "partCode": "WN6000005840",
+    "partName": "Substrate AS; Cover ASM I/P T/PNL;  RJ08 (INJ) RHD, K701",
+    "machines": [
+      "MC 13"
+    ],
+    "materialCodes": [
+      "RB1000000122"
+    ]
+  },
+  {
+    "partCode": "WN6000005910",
+    "partName": "Substrate AS; Cover ASM I/P T/PNL;  RJ08 (INJ) LHD, K701",
+    "machines": [
+      "MC 13"
+    ],
+    "materialCodes": [
+      "RB1000000122"
+    ]
+  },
+  {
+    "partCode": "WN6000005930",
+    "partName": "Pad AS; Cover ASM I/P T/PNL; LHD  U419",
+    "machines": [
+      "MC 15"
+    ],
+    "materialCodes": [
+      "RB1000001681"
+    ]
+  },
+  {
+    "partCode": "WN6000005960",
+    "partName": "RJ08 PAD DR SUBSTATE LH",
+    "machines": [
+      "MC 13"
+    ],
+    "materialCodes": [
+      "RB1000000122"
+    ]
+  },
+  {
+    "partCode": "WN6000006180",
+    "partName": "PAD DR SOFT SKIN RH RJ08 K701",
+    "machines": [
+      "MC 15"
+    ],
+    "materialCodes": [
+      "RB1000001671"
+    ]
+  },
+  {
+    "partCode": "WN6000006190",
+    "partName": "PAD DR SOFT SKIN RH RJ08 U419",
+    "machines": [
+      "MC 15"
+    ],
+    "materialCodes": [
+      "RB1000001681"
+    ]
+  },
+  {
+    "partCode": "WN6000006210",
+    "partName": "PAD ASST SOFT SKIN RH K701 RJ08 K701",
+    "machines": [
+      "MC 15"
+    ],
+    "materialCodes": [
+      "RB1000001671"
+    ]
+  },
+  {
+    "partCode": "WN6000006220",
+    "partName": "PAD ASST SOFT SKIN RH U419",
+    "machines": [
+      "MC 15"
+    ],
+    "materialCodes": [
+      "RB1000001681"
+    ]
+  },
+  {
+    "partCode": "WN6000006230",
+    "partName": "Pad AS; Cover ASM I/P T/PNL;  LHD  Black K701",
+    "machines": [
+      "MC 15"
+    ],
+    "materialCodes": [
+      "RB1000001671"
+    ]
+  },
+  {
+    "partCode": "WN6000006380",
+    "partName": "Bumper Side; RH VC67 (INJ), KIJI K701",
+    "machines": [
+      "MC 7"
+    ],
+    "materialCodes": [
+      "RB1000001702"
+    ]
+  },
+  {
+    "partCode": "WN6000006390",
+    "partName": "Bumper Side; LH VC67 (INJ), KIJI K701",
+    "machines": [
+      "MC 7"
+    ],
+    "materialCodes": [
+      "RB1000001702"
+    ]
+  },
+  {
+    "partCode": "WN6000006480",
+    "partName": "Grille FRT BPR Fascia MLD UPR;  RH RG21 (INJ) ASA DK Gray N057",
+    "machines": [
+      "MC 12"
+    ],
+    "materialCodes": [
+      "RB1000001331"
+    ]
+  },
+  {
+    "partCode": "WN6000006490",
+    "partName": "Grille FRT BPR Fascia MLD UPR;  LH RG21 (INJ) ASA DK Gray N057",
+    "machines": [
+      "MC 12"
+    ],
+    "materialCodes": [
+      "RB1000001331"
+    ]
+  },
+  {
+    "partCode": "WN6000006500",
+    "partName": "Grille FRT BPR Fascia MLD UPR;  RH RG21 (INJ) ABS Gray",
+    "machines": [
+      "MC 12"
+    ],
+    "materialCodes": [
+      "RB1000001271"
+    ]
+  },
+  {
+    "partCode": "WN6000006510",
+    "partName": "Grille FRT BPR Fascia MLD UPR;  LH RG21 (INJ) ABS Gray",
+    "machines": [
+      "MC 12"
+    ],
+    "materialCodes": [
+      "RB1000001271"
+    ]
+  },
+  {
+    "partCode": "WN6000006520",
+    "partName": "Grille FRT BPR Fascia MLD UPR CTR;  RG21 (INJ) ASA DK Gray N057",
+    "machines": [
+      "MC 15"
+    ],
+    "materialCodes": [
+      "RB1000001331"
+    ]
+  },
+  {
+    "partCode": "WN6000006530",
+    "partName": "Grille FRT BPR Fascia MLD UPR CTR;  RG21 (INJ) ABS Gray",
+    "machines": [
+      "MC 15"
+    ],
+    "materialCodes": [
+      "RB1000001271"
+    ]
+  },
+  {
+    "partCode": "WN6000006540",
+    "partName": "Grille FRT BPR Fascia MLD LWR;  RH RG21 (INJ) N057",
+    "machines": [
+      "MC 13"
+    ],
+    "materialCodes": [
+      "RB1000001271"
+    ]
+  },
+  {
+    "partCode": "WN6000006550",
+    "partName": "Grille FRT BPR Fascia MLD LWR;  LH RG21 (INJ) N057",
+    "machines": [
+      "MC 13"
+    ],
+    "materialCodes": [
+      "RB1000001271"
+    ]
+  },
+  {
+    "partCode": "WN6000006560",
+    "partName": "Grille FRT BPR Fascia MLD LWR;  LH RG21 (INJ) ABS Gray",
+    "machines": [
+      "MC 13"
+    ],
+    "materialCodes": [
+      "RB1000001271"
+    ]
+  },
+  {
+    "partCode": "WN6000006570",
+    "partName": "Grille FRT BPR Fascia MLD LWR;  LH RG21 (INJ) ABS Gray",
+    "machines": [
+      "MC 13"
+    ],
+    "materialCodes": [
+      "RB1000001271"
+    ]
+  },
+  {
+    "partCode": "WN6000006580",
+    "partName": "Grille FRT BPR Fascia MLD LWR  CTR;  RG21 (INJ)ASA DK Gray N057",
+    "machines": [
+      "MC 12"
+    ],
+    "materialCodes": [
+      "RB1000001331"
+    ]
+  },
+  {
+    "partCode": "WN6000006590",
+    "partName": "Grille FRT BPR Fascia MLD LWR CTR;  RG21 (INJ) ABS Gray",
+    "machines": [
+      "MC 12"
+    ],
+    "materialCodes": [
+      "RB1000001271"
+    ]
+  },
+  {
+    "partCode": "WN6000006790",
+    "partName": "Cover FRT BPR Fascia OPG Narrow;  RH RG21 W/O Fog,",
+    "machines": [
+      "MC 10"
+    ],
+    "materialCodes": [
+      "RB1000001252"
+    ]
+  },
+  {
+    "partCode": "WN6000006800",
+    "partName": "Cover FRT BPR Fascia OPG Narrow;  LH RG21 W/O Fog,",
+    "machines": [
+      "MC 10"
+    ],
+    "materialCodes": [
+      "RB1000001252"
+    ]
+  },
+  {
+    "partCode": "WP6000007590",
+    "partName": "FRT UPR;  RH RG01 Touch Up",
+    "machines": [
+      "MC 7",
+      "MC 19"
+    ],
+    "materialCodes": [
+      "RB1000001292"
+    ]
+  },
+  {
+    "partCode": "WP6000007600",
+    "partName": "FRT UPR;  LH RG01 Touch Up",
+    "machines": [
+      "MC 7",
+      "MC 19"
+    ],
+    "materialCodes": [
+      "RB1000001292"
+    ]
+  },
+  {
+    "partCode": "WP6000007650",
+    "partName": "FRT S/D TR;  MNL, RH ( Grain G289 )  K701",
+    "machines": [
+      "MC 18"
+    ],
+    "materialCodes": [
+      "RB1000001292"
+    ]
+  },
+  {
+    "partCode": "WP6000007660",
+    "partName": "FRT S/D TR;  MNL, RH ( Grain G289 )  K701",
+    "machines": [
+      "MC 18"
+    ],
+    "materialCodes": [
+      "RB1000001292"
+    ]
+  },
+  {
+    "partCode": "WP6000008050",
+    "partName": "RR S/D TR; LH (RJ01)",
+    "machines": [
+      "MC 18"
+    ],
+    "materialCodes": [
+      "RB1000001292"
+    ]
+  },
+  {
+    "partCode": "WP6000008060",
+    "partName": "RR S/D TR; RH (RJ01)",
+    "machines": [
+      "MC 18"
+    ],
+    "materialCodes": [
+      "RB1000001292"
+    ]
+  },
+  {
+    "partCode": "WP6000010560",
+    "partName": "Grille FRT BPR Fascia INR Wide;  RG14",
+    "machines": [
+      "MC 18"
+    ],
+    "materialCodes": [
+      "RB1000001252"
+    ]
+  },
+  {
+    "partCode": "WP6000010570",
+    "partName": "Grille FRT BPR Fascia INR Narrow;  RG14",
+    "machines": [
+      "MC 18"
+    ],
+    "materialCodes": [
+      "RB1000001252"
+    ]
+  },
+  {
+    "partCode": "WP6000012090",
+    "partName": "Grille FRT BPR Fascia INR Wide;  RG21",
+    "machines": [
+      "MC 18"
+    ],
+    "materialCodes": [
+      "RB1000001252"
+    ]
+  },
+  {
+    "partCode": "WP6000012130",
+    "partName": "Grille FRT BPR Fascia INR Narrow;  RG21",
+    "machines": [
+      "MC 18"
+    ],
+    "materialCodes": [
+      "RB1000001252"
+    ]
+  },
+  {
+    "partCode": "WS6000000440",
+    "partName": "Grille Radiator Cover;  RJ08",
+    "machines": [
+      "MC 16"
+    ],
+    "materialCodes": [
+      "RB1000001252"
+    ]
+  }
+]

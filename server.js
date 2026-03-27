@@ -12,6 +12,124 @@ const DATA_DIR = path.join(ROOT, "data");
 const STORE_FILE = path.join(DATA_DIR, "store.json");
 const CATALOG_FILE = path.join(DATA_DIR, "code-part-catalog.json");
 const DATABASE_URL = process.env.DATABASE_URL;
+const SESSION_COOKIE = "stockqr_session";
+const sessions = new Map();
+const authAccounts = {
+  ADMIN: {
+    username: "Admin",
+    password: "1234",
+    role: "admin",
+    displayName: "Admin",
+    appUserId: 1,
+    allowedViews: ["scan", "history", "dashboard", "master"]
+  },
+  F1: {
+    username: "F1",
+    password: "1234",
+    role: "clerk",
+    displayName: "F1",
+    appUserId: 2,
+    allowedViews: ["scan"]
+  }
+};
+
+function randomId() {
+  return `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 12)}`;
+}
+
+function parseCookies(cookieHeader) {
+  return String(cookieHeader || "")
+    .split(";")
+    .map(part => part.trim())
+    .filter(Boolean)
+    .reduce((acc, part) => {
+      const [key, ...rest] = part.split("=");
+      acc[key] = decodeURIComponent(rest.join("=") || "");
+      return acc;
+    }, {});
+}
+
+function createSession(account) {
+  const token = randomId();
+  const session = {
+    token,
+    username: account.username,
+    role: account.role,
+    displayName: account.displayName,
+    appUserId: account.appUserId,
+    allowedViews: account.allowedViews.slice(),
+    createdAt: new Date().toISOString()
+  };
+  sessions.set(token, session);
+  return session;
+}
+
+function getSessionFromRequest(req) {
+  const cookies = parseCookies(req.headers.cookie);
+  const token = cookies[SESSION_COOKIE];
+  return token ? sessions.get(token) || null : null;
+}
+
+function setSessionCookie(res, token) {
+  res.setHeader("Set-Cookie", `${SESSION_COOKIE}=${encodeURIComponent(token)}; Path=/; HttpOnly; SameSite=Lax`);
+}
+
+function clearSessionCookie(res) {
+  res.setHeader("Set-Cookie", `${SESSION_COOKIE}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0`);
+}
+
+function toAuthPayload(session) {
+  if (!session) {
+    return { authenticated: false };
+  }
+  return {
+    authenticated: true,
+    user: {
+      username: session.username,
+      role: session.role,
+      displayName: session.displayName,
+      appUserId: session.appUserId,
+      allowedViews: session.allowedViews.slice()
+    }
+  };
+}
+
+function canAccessApi(session, method, pathname) {
+  if (!pathname.startsWith("/api/")) {
+    return true;
+  }
+  if (pathname === "/api/auth/login" || pathname === "/api/auth/logout" || pathname === "/api/auth/session") {
+    return true;
+  }
+  if (!session) {
+    return false;
+  }
+  if (session.role === "admin") {
+    return true;
+  }
+
+  const allowed = [
+    method === "GET" && pathname === "/api/bootstrap",
+    method === "GET" && pathname === "/api/lookup/qr",
+    method === "POST" && pathname === "/api/transactions"
+  ];
+  return allowed.some(Boolean);
+}
+
+function filterBootstrapBySession(data, session) {
+  if (!session || session.role === "admin") {
+    return {
+      ...data,
+      auth: toAuthPayload(session).user
+    };
+  }
+
+  return {
+    ...data,
+    users: data.users.filter(item => Number(item.id) === Number(session.appUserId)),
+    auth: toAuthPayload(session).user
+  };
+}
 
 function normalizeScanText(value) {
   return String(value || "")
@@ -462,8 +580,8 @@ async function importCatalog(payload) {
   };
 }
 
-function json(res, statusCode, payload) {
-  res.writeHead(statusCode, { "Content-Type": "application/json; charset=utf-8" });
+function json(res, statusCode, payload, headers = {}) {
+  res.writeHead(statusCode, { "Content-Type": "application/json; charset=utf-8", ...headers });
   res.end(JSON.stringify(payload));
 }
 
@@ -783,6 +901,14 @@ async function getBootstrapData() {
       isActive: row.is_active
     }))
   };
+}
+
+function authenticateCredentials(username, password) {
+  const account = authAccounts[upperSafe(username)];
+  if (!account || String(password || "") !== account.password) {
+    return null;
+  }
+  return account;
 }
 
 async function getTransactions(filters) {
@@ -1506,15 +1632,53 @@ async function deleteMasterData(entity, id) {
 
 const server = http.createServer(async (req, res) => {
   const requestUrl = new URL(req.url, `http://${req.headers.host}`);
+  const session = getSessionFromRequest(req);
 
   if (req.method === "GET" && requestUrl.pathname === "/health") {
     json(res, 200, { ok: true, storage: db ? "postgres" : "file" });
     return;
   }
 
+  if (req.method === "GET" && requestUrl.pathname === "/api/auth/session") {
+    json(res, 200, toAuthPayload(session));
+    return;
+  }
+
+  if (req.method === "POST" && requestUrl.pathname === "/api/auth/login") {
+    try {
+      const body = await parseBody(req);
+      const account = authenticateCredentials(body.username, body.password);
+      if (!account) {
+        json(res, 401, { error: "Invalid username or password." });
+        return;
+      }
+      const nextSession = createSession(account);
+      json(res, 200, toAuthPayload(nextSession), { "Set-Cookie": `${SESSION_COOKIE}=${encodeURIComponent(nextSession.token)}; Path=/; HttpOnly; SameSite=Lax` });
+    } catch (error) {
+      json(res, 500, { error: error.message || "Unexpected server error." });
+    }
+    return;
+  }
+
+  if (req.method === "POST" && requestUrl.pathname === "/api/auth/logout") {
+    const cookies = parseCookies(req.headers.cookie);
+    const token = cookies[SESSION_COOKIE];
+    if (token) {
+      sessions.delete(token);
+    }
+    json(res, 200, { success: true }, { "Set-Cookie": `${SESSION_COOKIE}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0` });
+    return;
+  }
+
+  if (!canAccessApi(session, req.method, requestUrl.pathname)) {
+    const statusCode = session ? 403 : 401;
+    json(res, statusCode, { error: statusCode === 401 ? "Please log in first." : "You do not have access to this page." });
+    return;
+  }
+
   if (req.method === "GET" && requestUrl.pathname === "/api/bootstrap") {
     try {
-      json(res, 200, await getBootstrapData());
+      json(res, 200, filterBootstrapBySession(await getBootstrapData(), session));
     } catch (error) {
       json(res, 500, { error: error.message || "Unexpected server error." });
     }
@@ -1544,6 +1708,9 @@ const server = http.createServer(async (req, res) => {
   if (req.method === "POST" && requestUrl.pathname === "/api/transactions") {
     try {
       const body = await parseBody(req);
+      if (session?.appUserId) {
+        body.userId = session.appUserId;
+      }
       const result = await createTransaction(body);
       json(res, result.statusCode, result.payload);
     } catch (error) {

@@ -1,4 +1,5 @@
 const state = {
+  session: null,
   bootstrap: null,
   scannerStream: null,
   detector: null,
@@ -752,13 +753,155 @@ function bindEvents() {
   $("scan-toggle").addEventListener("click", startScanner);
 }
 
+function setShellVisible(isVisible) {
+  $("login-screen").classList.toggle("hidden", isVisible);
+  $("app-shell").classList.toggle("hidden", !isVisible);
+}
+
+function setRoleAccess(session) {
+  state.session = session || null;
+  const allowedViews = new Set(session?.allowedViews || []);
+  const isAdmin = session?.role === "admin";
+
+  document.querySelectorAll(".tab").forEach(button => {
+    const allowed = isAdmin || allowedViews.has(button.dataset.view);
+    button.classList.toggle("hidden", !allowed);
+  });
+  document.querySelectorAll("[data-view-target]").forEach(button => {
+    const allowed = isAdmin || allowedViews.has(button.dataset.viewTarget);
+    const card = button.closest(".menu-card");
+    if (card) card.classList.toggle("hidden", !allowed);
+  });
+  ["history", "dashboard", "master"].forEach(view => {
+    const section = $(`view-${view}`);
+    if (section) {
+      section.classList.toggle("hidden", !isAdmin);
+    }
+  });
+
+  const rolePill = $("role-pill");
+  if (rolePill) {
+    rolePill.textContent = isAdmin ? "ADMIN ACCESS" : "USER ACCESS";
+  }
+  const heroUser = $("hero-user");
+  if (heroUser) {
+    heroUser.textContent = session ? `${session.displayName} (${session.username})` : "-";
+  }
+}
+
+async function loadBootstrap() {
+  const data = await api("/api/bootstrap");
+  state.bootstrap = data;
+  state.session = data.auth || state.session;
+  setRoleAccess(state.session);
+
+  renderOptions($("userId"), data.users, "เลือกผู้ทำรายการ", "id", item => `${item.employeeCode} - ${item.fullName}`);
+  renderOptions($("jobId"), data.jobs, "ไม่ระบุงาน", "id", item => `${item.jobNo} - ${item.jobName}`);
+  renderOptions($("workOrderId"), data.workOrders, "ไม่ระบุใบงาน", "id", item => item.workOrderNo);
+
+  const preferredUserId = state.session?.appUserId || data.users[0]?.id;
+  if (preferredUserId) $("userId").value = preferredUserId;
+  $("userId").disabled = state.session?.role === "clerk";
+  if (data.jobs[0]) $("jobId").value = data.jobs[0].id;
+  if (data.workOrders[0]) $("workOrderId").value = data.workOrders[0].id;
+}
+
+function activateView(viewName) {
+  if (state.session?.role === "clerk" && viewName !== "scan") {
+    viewName = "scan";
+  }
+  document.querySelectorAll(".tab").forEach(button => {
+    button.classList.toggle("is-active", button.dataset.view === viewName);
+  });
+  document.querySelectorAll(".view").forEach(view => {
+    view.classList.toggle("is-active", view.id === `view-${viewName}`);
+  });
+}
+
+async function submitLogin(event) {
+  event.preventDefault();
+  $("login-message").textContent = "กำลังเข้าสู่ระบบ...";
+  try {
+    const result = await api("/api/auth/login", {
+      method: "POST",
+      body: JSON.stringify({
+        username: $("login-username").value.trim(),
+        password: $("login-password").value
+      })
+    });
+    state.session = result.user;
+    $("login-form").reset();
+    $("login-message").textContent = "";
+    await initAuthenticatedApp();
+  } catch (error) {
+    $("login-message").textContent = error.message;
+  }
+}
+
+async function logout() {
+  try {
+    await api("/api/auth/logout", { method: "POST" });
+  } catch (error) {
+    // Ignore logout transport errors and reset UI locally.
+  }
+  state.session = null;
+  state.bootstrap = null;
+  setShellVisible(false);
+  setRoleAccess(null);
+}
+
+function bindEvents() {
+  document.querySelectorAll(".tab").forEach(button => {
+    button.addEventListener("click", () => activateView(button.dataset.view));
+  });
+  document.querySelectorAll("[data-view-target]").forEach(button => {
+    button.addEventListener("click", () => activateView(button.dataset.viewTarget));
+  });
+  $("transaction-form").addEventListener("submit", submitTransaction);
+  $("catalog-upload-form").addEventListener("submit", uploadCatalog);
+  $("qrValue").addEventListener("input", scheduleLookup);
+  $("qrValue").addEventListener("change", () => {
+    lookupQr().catch(error => {
+      $("form-message").textContent = error.message;
+    });
+  });
+  $("master-form").addEventListener("submit", submitMaster);
+  $("master-search").addEventListener("input", event => {
+    state.masterSearch = event.target.value;
+    renderMasters();
+  });
+  $("history-refresh").addEventListener("click", refreshHistory);
+  $("history-search").addEventListener("input", refreshHistory);
+  $("history-action").addEventListener("change", refreshHistory);
+  $("native-scan-button").addEventListener("click", openNativeCameraScan);
+  $("native-scan-input").addEventListener("change", handleNativeScanFile);
+  $("scan-toggle").addEventListener("click", startScanner);
+  $("login-form").addEventListener("submit", submitLogin);
+  $("logout-button").addEventListener("click", logout);
+}
+
+async function initAuthenticatedApp() {
+  setShellVisible(true);
+  await loadBootstrap();
+  if (state.session?.role === "admin") {
+    await Promise.all([refreshHistory(), refreshDashboard(), refreshMasters()]);
+  } else {
+    activateView("scan");
+  }
+}
+
 async function init() {
   bindEvents();
-  await loadBootstrap();
-  await Promise.all([refreshHistory(), refreshDashboard(), refreshMasters()]);
+  setShellVisible(false);
+  const sessionState = await api("/api/auth/session");
+  if (!sessionState.authenticated) {
+    return;
+  }
+  state.session = sessionState.user;
+  await initAuthenticatedApp();
 }
 
 init().catch(error => {
-  const el = $("form-message");
+  const el = $("login-message") || $("form-message");
   if (el) el.textContent = error.message;
 });

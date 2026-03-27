@@ -702,15 +702,154 @@ textarea {
 
 @media (max-width: 680px) {
   .shell {
-    padding: 12px 12px 28px;
+    padding: 10px 10px 22px;
   }
 
   .hero-main {
-    padding: 20px;
+    padding: 16px;
+  }
+
+  .hero-dashboard {
+    border-radius: 24px;
+    margin-bottom: 14px;
+  }
+
+  .hero-topline {
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+
+  .pill {
+    min-height: 28px;
+    padding: 0 12px;
+    font-size: 0.74rem;
+  }
+
+  .logout-button,
+  .tab,
+  .menu-action,
+  .primary-button,
+  .secondary-button {
+    min-height: 50px;
+  }
+
+  .hero-content h1 {
+    max-width: none;
+    font-size: clamp(1.75rem, 9vw, 2.5rem);
+    line-height: 1.02;
+  }
+
+  .subtitle {
+    font-size: 0.94rem;
+    line-height: 1.45;
+  }
+
+  .hero-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .hero-stat {
-    min-height: 100px;
+    min-height: 86px;
+    padding: 14px;
+    border-radius: 18px;
+  }
+
+  .hero-stat strong {
+    font-size: 1.7rem;
+  }
+
+  .menu-grid {
+    gap: 12px;
+    margin-bottom: 14px;
+  }
+
+  .menu-card {
+    padding: 16px;
+    border-radius: 22px;
+  }
+
+  .menu-card p {
+    min-height: 0;
+    margin-bottom: 14px;
+    font-size: 0.92rem;
+    line-height: 1.45;
+  }
+
+  .tabs {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    margin: 0 -2px 12px;
+    padding: 4px 2px 8px;
+    background: linear-gradient(180deg, rgba(238, 245, 251, 0.98), rgba(238, 245, 251, 0.88));
+    backdrop-filter: blur(8px);
+  }
+
+  .tab {
+    flex: 0 0 auto;
+    white-space: nowrap;
+    padding: 0 16px;
+  }
+
+  .panel {
+    padding: 16px;
+    border-radius: 22px;
+    margin-bottom: 14px;
+  }
+
+  .panel-head {
+    gap: 12px;
+    margin-bottom: 14px;
+  }
+
+  .panel-head h2 {
+    font-size: 1.05rem;
+    margin-bottom: 6px;
+  }
+
+  .panel-head p {
+    font-size: 0.9rem;
+    line-height: 1.42;
+  }
+
+  .grid-form {
+    gap: 12px;
+  }
+
+  input,
+  select,
+  textarea {
+    min-height: 54px;
+    padding: 14px;
+    border-radius: 16px;
+    font-size: 16px;
+  }
+
+  label {
+    gap: 6px;
+    font-size: 0.92rem;
+  }
+
+  .lookup-card,
+  .summary-card {
+    border-radius: 18px;
+  }
+
+  .lookup-meta {
+    gap: 6px;
+  }
+
+  .lookup-meta span {
+    font-size: 0.82rem;
+    padding: 6px 9px;
+  }
+
+  .summary-card {
+    padding: 14px;
+  }
+
+  .summary-head strong {
+    font-size: 0.96rem;
   }
 
   .panel-head {
@@ -724,6 +863,11 @@ textarea {
   .summary-item {
     grid-template-columns: 1fr;
     gap: 6px;
+    padding: 10px;
+  }
+
+  .summary-item dd {
+    font-size: 0.95rem;
   }
 
   .scanner-wrap {
@@ -740,10 +884,68 @@ textarea {
   .scanner-status-row {
     align-items: flex-start;
     flex-direction: column;
+    gap: 4px;
+    padding: 10px 12px;
+  }
+
+  #scanner-status {
+    font-size: 0.95rem;
+  }
+
+  .button-row {
+    width: 100%;
   }
 
   .mobile-scan-row .secondary-button,
   .panel-head .button-row .secondary-button {
     width: 100%;
+  }
+
+  .actions.full {
+    gap: 10px;
+  }
+
+  .form-message {
+    font-size: 0.9rem;
+    line-height: 1.4;
+  }
+
+  .toolbar {
+    gap: 8px;
+  }
+
+  .toolbar input,
+  .toolbar select,
+  .toolbar button {
+    width: 100%;
+  }
+
+  .list-item {
+    padding: 14px;
+    border-radius: 18px;
+  }
+
+  .list-top {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .list-meta {
+    gap: 8px;
+    font-size: 0.84rem;
+  }
+
+  .stats {
+    gap: 10px;
+  }
+
+  .stat-card {
+    padding: 14px;
+    border-radius: 18px;
+  }
+
+  .stat-card strong {
+    font-size: 1.55rem;
   }
 }

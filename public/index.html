@@ -109,6 +109,24 @@
                 <div id="lookup-meta" class="lookup-meta"></div>
               </div>
 
+              <section id="scan-summary" class="scan-summary full hidden" aria-live="polite">
+                <article class="summary-card summary-card-qr">
+                  <div class="summary-head">
+                    <div class="lookup-label">QR Work Summary</div>
+                    <strong>สรุปข้อมูลที่อ่านได้</strong>
+                  </div>
+                  <dl id="summary-qr-fields" class="summary-fields"></dl>
+                </article>
+
+                <article class="summary-card summary-card-master">
+                  <div class="summary-head">
+                    <div class="lookup-label">Master Data</div>
+                    <strong>ข้อมูลอ้างอิงจาก Part Code</strong>
+                  </div>
+                  <dl id="summary-master-fields" class="summary-fields"></dl>
+                </article>
+              </section>
+
               <label>
                 <select id="actionType" name="actionType">
                   <option value="RECEIVE">รับเข้า</option>

@@ -62,10 +62,62 @@ function parsedLines(parsed) {
   return lines;
 }
 
+function renderSummaryList(targetId, rows) {
+  const root = $(targetId);
+  if (!root) return;
+
+  root.innerHTML = rows.length
+    ? rows.map(row => `
+      <div class="summary-item">
+        <dt>${row.label}</dt>
+        <dd>${row.value}</dd>
+      </div>
+    `).join("")
+    : '<div class="summary-empty">No data</div>';
+}
+
+function renderScanSummary(result) {
+  const section = $("scan-summary");
+  if (!section) return;
+
+  const parsed = result?.parsed;
+  const qrRows = [
+    { label: "Part / Ref No.", value: parsed?.referenceNo || "-" },
+    { label: "Part Code", value: parsed?.partCode || "-" },
+    { label: "WO", value: parsed?.workOrderNo || "-" },
+    { label: "QTY", value: parsed?.qty ?? "-" },
+    { label: "Date", value: parsed?.date || "-" },
+    { label: "Process", value: parsed?.process || "-" },
+    { label: "Model", value: parsed?.model || "-" }
+  ];
+
+  const masterRows = [
+    { label: "Matched QR", value: result?.matchedQrValue || "-" },
+    { label: "Entity", value: result?.entityCode || "-" },
+    { label: "Part Name", value: result?.entityName || "-" },
+    { label: "Machine", value: result?.machines?.length ? result.machines.join(", ") : "-" },
+    { label: "Material Code", value: result?.materialCodes?.length ? result.materialCodes.join(", ") : "-" }
+  ];
+
+  const hasParsedData = qrRows.some(row => row.value !== "-");
+  const hasMasterData = Boolean(result?.found || result?.matchedQrValue);
+  if (!hasParsedData && !hasMasterData) {
+    section.classList.add("hidden");
+    renderSummaryList("summary-qr-fields", []);
+    renderSummaryList("summary-master-fields", []);
+    return;
+  }
+
+  section.classList.remove("hidden");
+  renderSummaryList("summary-qr-fields", qrRows);
+  renderSummaryList("summary-master-fields", masterRows);
+}
+
 function renderLookup(result) {
   const card = $("lookup-card");
   if (!card) return;
   state.lastLookup = result || null;
+  renderScanSummary(result);
 
   if (!result || !result.qrValue) {
     card.classList.add("hidden");

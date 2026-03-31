@@ -1,0 +1,347 @@
+[
+  {
+    "employeeCode": "L00489",
+    "fullName": "ขวัญจิรา  แสนหวังดี",
+    "isActive": true
+  },
+  {
+    "employeeCode": "K02962",
+    "fullName": "คณาธิป ป้อมเจา",
+    "isActive": true
+  },
+  {
+    "employeeCode": "K02903",
+    "fullName": "ชินกร  คูลธิ",
+    "isActive": true
+  },
+  {
+    "employeeCode": "SD078",
+    "fullName": "ญาดา พิรักษา",
+    "isActive": true
+  },
+  {
+    "employeeCode": "L00527",
+    "fullName": "ณัฐพงศ์  ทันไธสง",
+    "isActive": true
+  },
+  {
+    "employeeCode": "K02762",
+    "fullName": "ณัฐวุฒิ  ไทยวงษ์",
+    "isActive": true
+  },
+  {
+    "employeeCode": "225001",
+    "fullName": "ธีรพล    ไชยขวัญ",
+    "isActive": true
+  },
+  {
+    "employeeCode": "L00315",
+    "fullName": "น.ส วิภาวรรณ  นะโพธิ์",
+    "isActive": true
+  },
+  {
+    "employeeCode": "L00339",
+    "fullName": "น.ส วิลาวัลย์ ทะลารัมย์",
+    "isActive": true
+  },
+  {
+    "employeeCode": "SD295",
+    "fullName": "นราวดี  ปรางค์ทอง",
+    "isActive": true
+  },
+  {
+    "employeeCode": "K02965",
+    "fullName": "นวพล ศรีสำอางค์",
+    "isActive": true
+  },
+  {
+    "employeeCode": "203009",
+    "fullName": "นางณาตยา  ปรีถวิล",
+    "isActive": true
+  },
+  {
+    "employeeCode": "L00737",
+    "fullName": "นางสาว ธนิดา เพชรเท่า",
+    "isActive": true
+  },
+  {
+    "employeeCode": "L00273",
+    "fullName": "นางสาว ปิยภรณ์  แก้วประเสริฐ",
+    "isActive": true
+  },
+  {
+    "employeeCode": "206006",
+    "fullName": "นางสาวคณิตา  ลุนใต้",
+    "isActive": true
+  },
+  {
+    "employeeCode": "213004",
+    "fullName": "นางสาวดารารัตน์  พรมชาติ",
+    "isActive": true
+  },
+  {
+    "employeeCode": "K02506",
+    "fullName": "นางสาวนฤทัย สิทธิจันทร์",
+    "isActive": true
+  },
+  {
+    "employeeCode": "K02868",
+    "fullName": "นางสาวนฤมล สุปัญญา",
+    "isActive": true
+  },
+  {
+    "employeeCode": "210073",
+    "fullName": "นางสาวนารีรัตน์  จันทร์เพ็ง",
+    "isActive": true
+  },
+  {
+    "employeeCode": "217005",
+    "fullName": "นางสาวนิธิภรณ์  แดนนาบัว",
+    "isActive": true
+  },
+  {
+    "employeeCode": "212094",
+    "fullName": "นางสาวนิภาวรรณ  พานิชกุล",
+    "isActive": true
+  },
+  {
+    "employeeCode": "211075",
+    "fullName": "นางสาวบรรจง  ราชณาจักร์",
+    "isActive": true
+  },
+  {
+    "employeeCode": "K02867",
+    "fullName": "นางสาวปิยดา ยามรัมย์",
+    "isActive": true
+  },
+  {
+    "employeeCode": "210027",
+    "fullName": "นางสาวพรพิไล  ศรีทนนาง",
+    "isActive": true
+  },
+  {
+    "employeeCode": "206029",
+    "fullName": "นางสาวพัชราภรณ์  ปัญญาสิทธิ์",
+    "isActive": true
+  },
+  {
+    "employeeCode": "213048",
+    "fullName": "นางสาวรัตนาภรณ์  เครือผักปัง",
+    "isActive": true
+  },
+  {
+    "employeeCode": "213009",
+    "fullName": "นางสาววรกาญจน์  ดวงแก้ว",
+    "isActive": true
+  },
+  {
+    "employeeCode": "199033",
+    "fullName": "นางสาววราลัย  วงศ์จีรภัทร",
+    "isActive": true
+  },
+  {
+    "employeeCode": "212019",
+    "fullName": "นางสาววิชุตา  กวดนอก",
+    "isActive": true
+  },
+  {
+    "employeeCode": "210035",
+    "fullName": "นางสาววิสารยา  กลางคำ",
+    "isActive": true
+  },
+  {
+    "employeeCode": "217042",
+    "fullName": "นางสาวสุกัญญา เชื่อขาว",
+    "isActive": true
+  },
+  {
+    "employeeCode": "203052",
+    "fullName": "นางสาวสุพรรษา  ศรีโยหะ",
+    "isActive": true
+  },
+  {
+    "employeeCode": "218009",
+    "fullName": "นางสาวสุภาพร   จำลองพันธ์",
+    "isActive": true
+  },
+  {
+    "employeeCode": "212060",
+    "fullName": "นางสาวอรวรรณ  ทองคำ",
+    "isActive": true
+  },
+  {
+    "employeeCode": "K02351",
+    "fullName": "นางสาวอินทิรา  วงศ์การสิน",
+    "isActive": true
+  },
+  {
+    "employeeCode": "213022",
+    "fullName": "นางสาวเย็นฤดี  มอมุงคุณ",
+    "isActive": true
+  },
+  {
+    "employeeCode": "K02489",
+    "fullName": "นางสาโสมสุดา พรรณโรจน์",
+    "isActive": true
+  },
+  {
+    "employeeCode": "197036",
+    "fullName": "นางอรุญณี  บัวศรี",
+    "isActive": true
+  },
+  {
+    "employeeCode": "204041",
+    "fullName": "นางเบญจวรรณ  การะเกษ",
+    "isActive": true
+  },
+  {
+    "employeeCode": "K02821",
+    "fullName": "นาตยา ชูคะรัมย์",
+    "isActive": true
+  },
+  {
+    "employeeCode": "K02615",
+    "fullName": "นาย พิศุทธ์   คงสันเทียะ",
+    "isActive": true
+  },
+  {
+    "employeeCode": "K02231",
+    "fullName": "นายกิตติ   เพิ่มพูน",
+    "isActive": true
+  },
+  {
+    "employeeCode": "208006",
+    "fullName": "นายจตุพล  คลาดแคล้ว",
+    "isActive": true
+  },
+  {
+    "employeeCode": "206005",
+    "fullName": "นายจรัญ  ลัดดี",
+    "isActive": true
+  },
+  {
+    "employeeCode": "199032",
+    "fullName": "นายฐานะพร  เจริญสุข",
+    "isActive": true
+  },
+  {
+    "employeeCode": "K02488",
+    "fullName": "นายธนากร  แจ่มแสง",
+    "isActive": true
+  },
+  {
+    "employeeCode": "K02953",
+    "fullName": "นายธราธร โสภาเพชร",
+    "isActive": true
+  },
+  {
+    "employeeCode": "222021",
+    "fullName": "นายธีรพงค์  หงส์ผาแก้ว",
+    "isActive": true
+  },
+  {
+    "employeeCode": "207082",
+    "fullName": "นายนที  บุญอาจ",
+    "isActive": true
+  },
+  {
+    "employeeCode": "223031",
+    "fullName": "นายประสิทธิ์  ยอดสิงห์",
+    "isActive": true
+  },
+  {
+    "employeeCode": "203048",
+    "fullName": "นายปราโมทย์  บุญหล้า",
+    "isActive": true
+  },
+  {
+    "employeeCode": "207048",
+    "fullName": "นายภูมิพัฒน์  สุนทร",
+    "isActive": true
+  },
+  {
+    "employeeCode": "206055",
+    "fullName": "นายมานะ  แสงจันทร์",
+    "isActive": true
+  },
+  {
+    "employeeCode": "197017",
+    "fullName": "นายมานะศักดิ์  ศรีนวล",
+    "isActive": true
+  },
+  {
+    "employeeCode": "207074",
+    "fullName": "นายรัตนพล  เทียมวงค์",
+    "isActive": true
+  },
+  {
+    "employeeCode": "207077",
+    "fullName": "นายวิชาญ  เจริญผล",
+    "isActive": true
+  },
+  {
+    "employeeCode": "L00679",
+    "fullName": "นายสมภพ พุทธรักษา",
+    "isActive": true
+  },
+  {
+    "employeeCode": "208061",
+    "fullName": "นายอดิศร  พลเยี่ยม",
+    "isActive": true
+  },
+  {
+    "employeeCode": "208007",
+    "fullName": "นายเมธา  ภาลี",
+    "isActive": true
+  },
+  {
+    "employeeCode": "K02487",
+    "fullName": "นายไกรสร อังฉกรรจ์",
+    "isActive": true
+  },
+  {
+    "employeeCode": "L00463",
+    "fullName": "น้ำฝน สมเดช",
+    "isActive": true
+  },
+  {
+    "employeeCode": "L00690",
+    "fullName": "พิมพ์วิภา ฟองกระสา",
+    "isActive": true
+  },
+  {
+    "employeeCode": "L00476",
+    "fullName": "มงคล  ทองสุกะ",
+    "isActive": true
+  },
+  {
+    "employeeCode": "SD227",
+    "fullName": "รัชนี  จันไทย",
+    "isActive": true
+  },
+  {
+    "employeeCode": "L00373",
+    "fullName": "วิษณุกร   พรดีมา",
+    "isActive": true
+  },
+  {
+    "employeeCode": "L00490",
+    "fullName": "วิสณี  ลอดสุโข",
+    "isActive": true
+  },
+  {
+    "employeeCode": "L00484",
+    "fullName": "อภิชิต  แสงศรีบุญเรือง",
+    "isActive": true
+  },
+  {
+    "employeeCode": "K02774",
+    "fullName": "อาทิตยา ปลีนารัมย์",
+    "isActive": true
+  },
+  {
+    "employeeCode": "ADMIN1234",
+    "fullName": "Administrator",
+    "isActive": true
+  }
+]

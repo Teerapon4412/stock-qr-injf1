@@ -942,7 +942,7 @@ async function loadBootstrap() {
 
   const preferredUserId = state.session?.appUserId || data.users[0]?.id;
   if (preferredUserId) $("userId").value = preferredUserId;
-  $("userId").disabled = state.session?.role === "clerk";
+  $("userId").disabled = state.session?.role === "clerk" && Boolean(state.session?.appUserId);
   if (data.jobs[0]) $("jobId").value = data.jobs[0].id;
   if (data.workOrders[0]) $("workOrderId").value = data.workOrders[0].id;
 }

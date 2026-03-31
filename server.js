@@ -11,6 +11,7 @@ const PUBLIC_DIR = path.join(ROOT, "public");
 const DATA_DIR = path.join(ROOT, "data");
 const STORE_FILE = path.join(DATA_DIR, "store.json");
 const CATALOG_FILE = path.join(DATA_DIR, "code-part-catalog.json");
+const EMPLOYEE_FILE = path.join(DATA_DIR, "employees.json");
 const DATABASE_URL = process.env.DATABASE_URL;
 const SESSION_COOKIE = "stockqr_session";
 const sessions = new Map();
@@ -20,7 +21,7 @@ const authAccounts = {
     password: "1234",
     role: "admin",
     displayName: "Admin",
-    appUserId: 1,
+    appUserId: null,
     allowedViews: ["scan", "history", "dashboard", "master"]
   },
   F1: {
@@ -28,7 +29,7 @@ const authAccounts = {
     password: "1234",
     role: "clerk",
     displayName: "F1",
-    appUserId: 2,
+    appUserId: null,
     allowedViews: ["scan"]
   }
 };
@@ -124,9 +125,13 @@ function filterBootstrapBySession(data, session) {
     };
   }
 
+  const visibleUsers = session.appUserId
+    ? data.users.filter(item => Number(item.id) === Number(session.appUserId))
+    : data.users;
+
   return {
     ...data,
-    users: data.users.filter(item => Number(item.id) === Number(session.appUserId)),
+    users: visibleUsers,
     auth: toAuthPayload(session).user
   };
 }
@@ -217,6 +222,78 @@ function readPartCatalog() {
 }
 
 let partCatalog = readPartCatalog();
+
+function readEmployeeSeed() {
+  if (!fs.existsSync(EMPLOYEE_FILE)) {
+    return [];
+  }
+
+  try {
+    const data = JSON.parse(fs.readFileSync(EMPLOYEE_FILE, "utf8"));
+    if (!Array.isArray(data)) {
+      return [];
+    }
+
+    return data
+      .filter(item => item && item.employeeCode && item.fullName && item.isActive !== false)
+      .map(item => ({
+        employeeCode: String(item.employeeCode).trim(),
+        fullName: String(item.fullName).trim(),
+        isActive: item.isActive !== false
+      }));
+  } catch (error) {
+    console.warn("Unable to read employees.json:", error.message);
+    return [];
+  }
+}
+
+const employeeSeed = readEmployeeSeed();
+
+function buildSeedUsers() {
+  if (!employeeSeed.length) {
+    return [
+      { id: 1, employeeCode: "U001", fullName: "Somchai Chaiya", roleId: 1, isActive: true },
+      { id: 2, employeeCode: "U008", fullName: "Wittaya Saeng", roleId: 2, isActive: true }
+    ];
+  }
+
+  return employeeSeed.map((employee, index) => ({
+    id: index + 1,
+    employeeCode: employee.employeeCode,
+    fullName: employee.fullName,
+    roleId: 2,
+    isActive: employee.isActive !== false
+  }));
+}
+
+function syncUsersToStore(store) {
+  const nextUsers = buildSeedUsers();
+  const changed = JSON.stringify(store.users) !== JSON.stringify(nextUsers);
+  if (changed) {
+    store.users = nextUsers;
+  }
+  return changed;
+}
+
+async function syncUsersToDatabase() {
+  if (!db || !employeeSeed.length) {
+    return;
+  }
+
+  for (const employee of employeeSeed) {
+    await db.query(
+      `INSERT INTO users (employee_code, full_name, role_id, is_active)
+       VALUES ($1, $2, $3, $4)
+       ON CONFLICT (employee_code)
+       DO UPDATE SET
+         full_name = EXCLUDED.full_name,
+         role_id = EXCLUDED.role_id,
+         is_active = EXCLUDED.is_active,
+         updated_at = CURRENT_TIMESTAMP`,
+      [employee.employeeCode, employee.fullName, 2, employee.isActive !== false]
+    );
+  }
+}
 
 function writePartCatalog(catalog) {
   if (!fs.existsSync(DATA_DIR)) {
@@ -387,10 +464,7 @@ const defaultStore = {
     { id: 1, roleCode: "ADMIN", roleName: "Admin" },
     { id: 2, roleCode: "CLERK", roleName: "Store Clerk" }
   ],
-  users: [
-    { id: 1, employeeCode: "U001", fullName: "Somchai Chaiya", roleId: 1, isActive: true },
-    { id: 2, employeeCode: "U008", fullName: "Wittaya Saeng", roleId: 2, isActive: true }
-  ],
+  users: buildSeedUsers(),
   jobs: [],
   workOrders: [],
   parts: [],
@@ -522,6 +596,12 @@ function ensureStore() {
   }
   if (!fs.existsSync(STORE_FILE)) {
     fs.writeFileSync(STORE_FILE, JSON.stringify(defaultStore, null, 2));
+    return;
+  }
+
+  const store = JSON.parse(fs.readFileSync(STORE_FILE, "utf8"));
+  if (syncUsersToStore(store)) {
+    writeStore(store);
   }
 }
 
@@ -536,7 +616,8 @@ function writeStore(store) {
 
 function syncStoreWithCatalog() {
   const store = readStore();
-  if (syncCatalogToStore(store)) {
+  const changed = syncCatalogToStore(store) || syncUsersToStore(store);
+  if (changed) {
     writeStore(store);
   }
 }
@@ -851,6 +932,11 @@ async function initializeDatabase() {
   const countResult = await db.query("SELECT COUNT(*)::int AS count FROM roles");
   if (countResult.rows[0].count > 0) {
     try {
+      await syncUsersToDatabase();
+    } catch (error) {
+      console.error("Employee sync skipped during startup", error);
+    }
+    try {
       await syncCatalogToDatabase();
     } catch (error) {
       console.error("Catalog sync skipped during startup", error);
@@ -861,13 +947,21 @@ async function initializeDatabase() {
   await db.query("BEGIN");
   try {
     await db.query("INSERT INTO roles (id, role_code, role_name) VALUES (1, 'ADMIN', 'Admin'), (2, 'CLERK', 'Store Clerk')");
-    await db.query("INSERT INTO users (id, employee_code, full_name, role_id, is_active) VALUES (1, 'U001', 'Somchai Chaiya', 1, TRUE), (2, 'U008', 'Wittaya Saeng', 2, TRUE)");
+    if (!employeeSeed.length) {
+      await db.query("INSERT INTO users (id, employee_code, full_name, role_id, is_active) VALUES (1, 'U001', 'Somchai Chaiya', 1, TRUE), (2, 'U008', 'Wittaya Saeng', 2, TRUE)");
+    }
     await db.query("INSERT INTO item_status (id, status_code, status_name) VALUES (1, 'PENDING_RECEIVE', 'Pending Receive'), (2, 'IN_STOCK', 'In Stock'), (3, 'ISSUED', 'Issued')");
     await db.query("INSERT INTO locations (id, location_code, location_name) VALUES (1, 'A01', 'Rack A01'), (2, 'PROD', 'Production')");
     await db.query("COMMIT");
   } catch (error) {
     await db.query("ROLLBACK");
     throw error;
+  }
+
+  try {
+    await syncUsersToDatabase();
+  } catch (error) {
+    console.error("Employee sync skipped during startup", error);
   }
 
   try {
@@ -897,8 +991,14 @@ async function getBootstrapData() {
     db.query("SELECT id, qr_value, entity_type, entity_id, is_active FROM qr_codes WHERE is_active = TRUE ORDER BY id")
   ]);
 
+  const allowedEmployeeCodes = new Set(employeeSeed.map(item => item.employeeCode));
+  const mappedUsers = users.rows.map(toCamelUser);
+  const bootstrapUsers = allowedEmployeeCodes.size
+    ? mappedUsers.filter(item => allowedEmployeeCodes.has(item.employeeCode))
+    : mappedUsers;
+
   return {
-    users: users.rows.map(toCamelUser),
+    users: bootstrapUsers,
     jobs: jobs.rows.map(toCamelJob),
     workOrders: workOrders.rows.map(toCamelWorkOrder),
     locations: locations.rows.map(toCamelLocation),
@@ -1781,7 +1881,7 @@ const server = http.createServer(async (req, res) => {
   if (req.method === "POST" && requestUrl.pathname === "/api/transactions") {
     try {
       const body = await parseBody(req);
-      if (session?.appUserId) {
+      if (session?.role === "clerk" && session?.appUserId) {
         body.userId = session.appUserId;
       }
       const result = await createTransaction(body);

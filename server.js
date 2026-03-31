@@ -248,6 +248,11 @@ function readEmployeeSeed() {
 }
 
 const employeeSeed = readEmployeeSeed();
+const jobSeed = [
+  { id: 1, jobNo: "WIP", jobName: "WIP", customerName: "", description: "" },
+  { id: 2, jobNo: "FG", jobName: "FG", customerName: "", description: "" },
+  { id: 3, jobNo: "SERVICE", jobName: "SERVICE", customerName: "", description: "" }
+];
 
 function buildSeedUsers() {
   if (!employeeSeed.length) {
@@ -275,6 +280,14 @@ function syncUsersToStore(store) {
   return changed;
 }
 
+function syncJobsToStore(store) {
+  const changed = JSON.stringify(store.jobs) !== JSON.stringify(jobSeed);
+  if (changed) {
+    store.jobs = jobSeed.map(item => ({ ...item }));
+  }
+  return changed;
+}
+
 async function syncUsersToDatabase() {
   if (!db || !employeeSeed.length) {
     return;
@@ -291,6 +304,26 @@ async function syncUsersToDatabase() {
          is_active = EXCLUDED.is_active,
          updated_at = CURRENT_TIMESTAMP`,
       [employee.employeeCode, employee.fullName, 2, employee.isActive !== false]
+    );
+  }
+}
+
+async function syncJobsToDatabase() {
+  if (!db) {
+    return;
+  }
+
+  for (const job of jobSeed) {
+    await db.query(
+      `INSERT INTO jobs (id, job_no, job_name, customer_name, description)
+       VALUES ($1, $2, $3, $4, $5)
+       ON CONFLICT (job_no)
+       DO UPDATE SET
+         job_name = EXCLUDED.job_name,
+         customer_name = EXCLUDED.customer_name,
+         description = EXCLUDED.description,
+         updated_at = CURRENT_TIMESTAMP`,
+      [job.id, job.jobNo, job.jobName, job.customerName, job.description]
     );
   }
 }
@@ -465,7 +498,7 @@ const defaultStore = {
     { id: 2, roleCode: "CLERK", roleName: "Store Clerk" }
   ],
   users: buildSeedUsers(),
-  jobs: [],
+  jobs: jobSeed.map(item => ({ ...item })),
   workOrders: [],
   parts: [],
   boxes: [],
@@ -616,7 +649,7 @@ function writeStore(store) {
 
 function syncStoreWithCatalog() {
   const store = readStore();
-  const changed = syncCatalogToStore(store) || syncUsersToStore(store);
+  const changed = syncCatalogToStore(store) || syncUsersToStore(store) || syncJobsToStore(store);
   if (changed) {
     writeStore(store);
   }
@@ -932,6 +965,11 @@ async function initializeDatabase() {
   const countResult = await db.query("SELECT COUNT(*)::int AS count FROM roles");
   if (countResult.rows[0].count > 0) {
     try {
+      await syncJobsToDatabase();
+    } catch (error) {
+      console.error("Job sync skipped during startup", error);
+    }
+    try {
       await syncUsersToDatabase();
     } catch (error) {
       console.error("Employee sync skipped during startup", error);
@@ -947,6 +985,7 @@ async function initializeDatabase() {
   await db.query("BEGIN");
   try {
     await db.query("INSERT INTO roles (id, role_code, role_name) VALUES (1, 'ADMIN', 'Admin'), (2, 'CLERK', 'Store Clerk')");
+    await db.query("INSERT INTO jobs (id, job_no, job_name, customer_name, description) VALUES (1, 'WIP', 'WIP', '', ''), (2, 'FG', 'FG', '', ''), (3, 'SERVICE', 'SERVICE', '', '')");
     if (!employeeSeed.length) {
       await db.query("INSERT INTO users (id, employee_code, full_name, role_id, is_active) VALUES (1, 'U001', 'Somchai Chaiya', 1, TRUE), (2, 'U008', 'Wittaya Saeng', 2, TRUE)");
     }
@@ -956,6 +995,12 @@ async function initializeDatabase() {
   } catch (error) {
     await db.query("ROLLBACK");
     throw error;
+  }
+
+  try {
+    await syncJobsToDatabase();
+  } catch (error) {
+    console.error("Job sync skipped during startup", error);
   }
 
   try {
@@ -996,10 +1041,14 @@ async function getBootstrapData() {
   const bootstrapUsers = allowedEmployeeCodes.size
     ? mappedUsers.filter(item => allowedEmployeeCodes.has(item.employeeCode))
     : mappedUsers;
+  const allowedJobNos = new Set(jobSeed.map(item => item.jobNo));
+  const bootstrapJobs = jobs.rows
+    .map(toCamelJob)
+    .filter(item => allowedJobNos.has(item.jobNo));
 
   return {
     users: bootstrapUsers,
-    jobs: jobs.rows.map(toCamelJob),
+    jobs: bootstrapJobs,
     workOrders: workOrders.rows.map(toCamelWorkOrder),
     locations: locations.rows.map(toCamelLocation),
     qrCodes: qrCodes.rows.map(row => ({

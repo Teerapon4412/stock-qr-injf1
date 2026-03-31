@@ -248,6 +248,15 @@ function resolveLookupKeys(qrValue) {
   };
 }
 
+function findActiveQrByCandidates(qrCodes, candidates) {
+  for (const candidate of candidates) {
+    const qr = qrCodes.find(item => item.isActive && upperSafe(item.qrValue) === candidate);
+    if (qr) {
+      return qr;
+    }
+  }
+  return null;
+}
 function syncCatalogToStore(store) {
   if (!partCatalog.length) {
     return false;
@@ -696,12 +705,12 @@ function computeDashboard(store) {
 
 function handleCreateTransactionFile(store, payload) {
   const { parsed, candidates } = resolveLookupKeys(payload.qrValue);
-  let qr = store.qrCodes.find(item => candidates.includes(upperSafe(item.qrValue)) && item.isActive);
+  let qr = findActiveQrByCandidates(store.qrCodes, candidates);
   if (!qr) {
     const catalogItem = candidates.map(findCatalogItem).find(Boolean);
     if (catalogItem) {
       syncCatalogToStore(store);
-      qr = store.qrCodes.find(item => upperSafe(item.qrValue) === catalogItem.partCode && item.isActive);
+      qr = findActiveQrByCandidates(store.qrCodes, candidates);
     }
   }
   if (!qr) {
@@ -1197,7 +1206,11 @@ async function createTransaction(payload) {
     let qrResult = { rowCount: 0, rows: [] };
     if (candidates.length) {
       qrResult = await client.query(
-        "SELECT id, qr_value, entity_type, entity_id FROM qr_codes WHERE UPPER(qr_value) = ANY($1) AND is_active = TRUE ORDER BY id LIMIT 1",
+        `SELECT id, qr_value, entity_type, entity_id
+         FROM qr_codes
+         WHERE UPPER(qr_value) = ANY($1::text[]) AND is_active = TRUE
+         ORDER BY array_position($1::text[], UPPER(qr_value)), id
+         LIMIT 1`,
         [candidates]
       );
     }
@@ -1206,7 +1219,11 @@ async function createTransaction(payload) {
       if (catalogItem) {
         await ensureCatalogPartInDatabase(catalogItem);
         qrResult = await client.query(
-          "SELECT id, qr_value, entity_type, entity_id FROM qr_codes WHERE UPPER(qr_value) = ANY($1) AND is_active = TRUE ORDER BY id LIMIT 1",
+          `SELECT id, qr_value, entity_type, entity_id
+           FROM qr_codes
+           WHERE UPPER(qr_value) = ANY($1::text[]) AND is_active = TRUE
+           ORDER BY array_position($1::text[], UPPER(qr_value)), id
+           LIMIT 1`,
           [candidates]
         );
       }
@@ -1334,7 +1351,7 @@ async function getQrLookup(qrValue) {
 
   if (!db) {
     const store = readStore();
-    const qr = store.qrCodes.find(item => candidates.includes(upperSafe(item.qrValue)) && item.isActive);
+    const qr = findActiveQrByCandidates(store.qrCodes, candidates);
     if (!qr) {
       if (catalogItem) {
         return buildLookupResponse({
@@ -1375,8 +1392,8 @@ async function getQrLookup(qrValue) {
      LEFT JOIN boxes b ON q.entity_type = 'BOX' AND b.id = q.entity_id
      LEFT JOIN jobs j ON q.entity_type = 'JOB' AND j.id = q.entity_id
      LEFT JOIN work_orders wo ON q.entity_type = 'WORK_ORDER' AND wo.id = q.entity_id
-     WHERE UPPER(q.qr_value) = ANY($1) AND q.is_active = TRUE
-     ORDER BY q.id
+     WHERE UPPER(q.qr_value) = ANY($1::text[]) AND q.is_active = TRUE
+     ORDER BY array_position($1::text[], UPPER(q.qr_value)), q.id
      LIMIT 1`,
     [candidates]
   ) : { rowCount: 0, rows: [] };

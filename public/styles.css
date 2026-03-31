@@ -325,7 +325,7 @@ p {
 
 .scan-summary {
   display: grid;
-  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr);
   gap: 14px;
 }
 
@@ -337,6 +337,7 @@ p {
 }
 
 .summary-card-qr {
+  display: none;
   background: linear-gradient(180deg, rgba(255, 244, 235, 0.96), rgba(255, 251, 247, 0.96));
 }
 

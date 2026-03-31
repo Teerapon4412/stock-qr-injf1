@@ -123,6 +123,12 @@ function renderSummaryList(targetId, rows) {
     : '<div class="summary-empty">No data</div>';
 }
 
+function renderWorkOrderSuggestions(items) {
+  const list = $("work-order-options");
+  if (!list) return;
+  list.innerHTML = items.map(item => `<option value="${item.workOrderNo}"></option>`).join("");
+}
+
 function renderScanSummary(result) {
   const section = $("scan-summary");
   if (!section) return;
@@ -221,10 +227,7 @@ async function lookupQr() {
   }
 
   if (result.parsed?.workOrderNo && state.bootstrap?.workOrders?.length) {
-    const matchedWorkOrder = state.bootstrap.workOrders.find(item => item.workOrderNo === result.parsed.workOrderNo);
-    if (matchedWorkOrder) {
-      $("workOrderId").value = matchedWorkOrder.id;
-    }
+    $("workOrderCode").value = result.parsed.workOrderNo;
   }
 
   if (!result.found) {
@@ -977,6 +980,97 @@ async function logout() {
   setRoleAccess(null);
 }
 
+async function loadBootstrap() {
+  const data = await api("/api/bootstrap");
+  state.bootstrap = data;
+  state.session = data.auth || state.session;
+  setRoleAccess(state.session);
+
+  renderOptions($("userId"), data.users, "เลือกผู้ทำรายการ", "id", item => `${item.employeeCode} - ${item.fullName}`);
+  renderOptions($("jobId"), data.jobs, "ไม่ระบุงาน", "id", item => `${item.jobNo} - ${item.jobName}`);
+  renderWorkOrderSuggestions(data.workOrders || []);
+
+  const preferredUserId = state.session?.appUserId || data.users[0]?.id;
+  if (preferredUserId) $("userId").value = preferredUserId;
+  $("userId").disabled = state.session?.role === "clerk" && Boolean(state.session?.appUserId);
+  if (data.jobs[0]) $("jobId").value = data.jobs[0].id;
+}
+
+async function submitTransaction(event) {
+  event.preventDefault();
+  $("form-message").textContent = "กำลังบันทึก...";
+
+  const payload = {
+    qrValue: $("qrValue").value.trim(),
+    actionType: $("actionType").value,
+    qty: Number($("qty").value),
+    userId: $("userId").value,
+    jobId: $("jobId").value,
+    workOrderCode: $("workOrderCode").value.trim(),
+    toLocationCode: $("toLocationCode").value.trim(),
+    remark: $("remark").value.trim()
+  };
+
+  try {
+    const result = await api("/api/transactions", {
+      method: "POST",
+      body: JSON.stringify(payload)
+    });
+    const transactionNo = result.transaction?.transactionNo || "saved";
+    const qtyOnHand = result.balance?.qtyOnHand;
+    $("form-message").textContent = qtyOnHand !== undefined
+      ? `บันทึกแล้ว: ${transactionNo} | คงเหลือ ${qtyOnHand}`
+      : `บันทึกแล้ว: ${transactionNo}`;
+    $("transaction-form").reset();
+    if (state.bootstrap?.users[0]) $("userId").value = state.bootstrap.users[0].id;
+    if (state.bootstrap?.jobs[0]) $("jobId").value = state.bootstrap.jobs[0].id;
+    $("qty").value = 1;
+    renderLookup(null);
+    await Promise.all([loadBootstrap(), refreshHistory(), refreshDashboard(), refreshMasters()]);
+  } catch (error) {
+    $("form-message").textContent = error.message;
+  }
+}
+
+function openWorkOrderScan() {
+  const input = $("workorder-scan-input");
+  if (!input) return;
+  input.value = "";
+  input.click();
+}
+
+async function handleWorkOrderScanFile(event) {
+  const file = event.target.files?.[0];
+  if (!file) return;
+
+  if (!("BarcodeDetector" in window)) {
+    $("form-message").textContent = "เครื่องนี้ยังไม่รองรับการอ่าน Barcode จากรูปภาพอัตโนมัติ";
+    return;
+  }
+
+  try {
+    $("form-message").textContent = "กำลังอ่านบาร์โค้ดใบงาน...";
+    const bitmap = await createImageBitmap(file);
+    const detector = new window.BarcodeDetector({
+      formats: ["code_128", "code_39", "code_93", "codabar", "ean_13", "ean_8", "upc_a", "upc_e", "itf", "qr_code"]
+    });
+    const codes = await detector.detect(bitmap);
+    bitmap.close?.();
+
+    if (!codes[0]?.rawValue) {
+      $("form-message").textContent = "ไม่พบบาร์โค้ดในภาพนี้ สามารถพิมพ์เลขใบงานเองได้";
+      return;
+    }
+
+    $("workOrderCode").value = codes[0].rawValue.trim();
+    $("form-message").textContent = `อ่านบาร์โค้ดใบงานได้: ${codes[0].rawValue}`;
+  } catch (error) {
+    $("form-message").textContent = "อ่านบาร์โค้ดใบงานไม่สำเร็จ สามารถพิมพ์เลขใบงานเองได้";
+  } finally {
+    event.target.value = "";
+  }
+}
+
 function bindEvents() {
   document.querySelectorAll(".tab").forEach(button => {
     button.addEventListener("click", () => activateView(button.dataset.view));
@@ -1002,6 +1096,8 @@ function bindEvents() {
   $("history-action").addEventListener("change", refreshHistory);
   $("native-scan-button").addEventListener("click", openNativeCameraScan);
   $("native-scan-input").addEventListener("change", handleNativeScanFile);
+  $("workorder-scan-button").addEventListener("click", openWorkOrderScan);
+  $("workorder-scan-input").addEventListener("change", handleWorkOrderScanFile);
   $("scan-toggle").addEventListener("click", startScanner);
   $("login-form").addEventListener("submit", submitLogin);
   $("logout-button").addEventListener("click", logout);

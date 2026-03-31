@@ -771,6 +771,69 @@ function resolveEntity(store, entityType, entityId) {
   return { code: entity[codeKey], name: entity[nameKey] || entity[codeKey] };
 }
 
+function normalizeWorkOrderCode(value) {
+  return upperSafe(value);
+}
+
+function resolveSubmittedWorkOrderCode(payload) {
+  return normalizeWorkOrderCode(payload.workOrderCode || payload.workOrderNo || "");
+}
+
+function ensureWorkOrderInStore(store, workOrderCode, jobId) {
+  const normalizedCode = normalizeWorkOrderCode(workOrderCode);
+  if (!normalizedCode) {
+    return null;
+  }
+
+  let workOrder = store.workOrders.find(item => normalizeWorkOrderCode(item.workOrderNo) === normalizedCode);
+  if (workOrder) {
+    return workOrder;
+  }
+
+  const fallbackJobId = Number(jobId) || store.jobs[0]?.id || null;
+  if (!fallbackJobId) {
+    return null;
+  }
+
+  workOrder = {
+    id: nextId(store.workOrders),
+    workOrderNo: normalizedCode,
+    description: "",
+    jobId: fallbackJobId,
+    plannedQty: 0
+  };
+  store.workOrders.push(workOrder);
+  return workOrder;
+}
+
+async function ensureWorkOrderInDatabase(client, workOrderCode, jobId) {
+  const normalizedCode = normalizeWorkOrderCode(workOrderCode);
+  if (!normalizedCode) {
+    return null;
+  }
+
+  const existing = await client.query(
+    "SELECT id, work_order_no, description, job_id, planned_qty FROM work_orders WHERE UPPER(work_order_no) = $1 LIMIT 1",
+    [normalizedCode]
+  );
+  if (existing.rowCount > 0) {
+    return existing.rows[0];
+  }
+
+  const resolvedJobId = Number(jobId) || jobSeed[0]?.id || null;
+  if (!resolvedJobId) {
+    return null;
+  }
+
+  const inserted = await client.query(
+    `INSERT INTO work_orders (work_order_no, description, job_id, planned_qty)
+     VALUES ($1, $2, $3, $4)
+     RETURNING id, work_order_no, description, job_id, planned_qty`,
+    [normalizedCode, "", resolvedJobId, 0]
+  );
+  return inserted.rows[0];
+}
+
 function enrichTransaction(store, transaction) {
   const qr = store.qrCodes.find(item => item.id === transaction.qrCodeId);
   const user = store.users.find(item => item.id === transaction.performedBy);
@@ -819,6 +882,7 @@ function computeDashboard(store) {
 
 function handleCreateTransactionFile(store, payload) {
   const { parsed, candidates } = resolveLookupKeys(payload.qrValue);
+  const workOrderCode = resolveSubmittedWorkOrderCode(payload);
   let qr = findActiveQrByCandidates(store.qrCodes, candidates);
   if (!qr) {
     const catalogItem = candidates.map(findCatalogItem).find(Boolean);
@@ -861,6 +925,8 @@ function handleCreateTransactionFile(store, payload) {
     return { statusCode: 400, payload: { error: `Not enough stock. Current balance is ${currentQty}.` } };
   }
 
+  const workOrder = ensureWorkOrderInStore(store, workOrderCode, payload.jobId);
+
   const transactionId = nextId(store.stockTransactions);
   const transaction = {
     id: transactionId,
@@ -873,7 +939,7 @@ function handleCreateTransactionFile(store, payload) {
     fromLocationId: actionType === "ISSUE" && balance ? balance.currentLocationId : null,
     toLocationId: location.id,
     referenceJobId: payload.jobId ? Number(payload.jobId) : null,
-    referenceWorkOrderId: payload.workOrderId ? Number(payload.workOrderId) : null,
+    referenceWorkOrderId: workOrder ? workOrder.id : null,
     statusAfterId: status ? status.id : null,
     performedBy: user.id,
     performedAt: new Date().toISOString(),
@@ -1339,6 +1405,7 @@ async function createTransaction(payload) {
 
   const actionType = String(payload.actionType || "").toUpperCase();
   const qty = Number(payload.qty);
+  const workOrderCode = resolveSubmittedWorkOrderCode(payload);
   if (!["RECEIVE", "ISSUE"].includes(actionType)) {
     return { statusCode: 400, payload: { error: "Action must be RECEIVE or ISSUE." } };
   }
@@ -1403,6 +1470,7 @@ async function createTransaction(payload) {
       [locationCode, locationCode]
     );
     const location = locationResult.rows[0];
+    const workOrder = await ensureWorkOrderInDatabase(client, workOrderCode, payload.jobId);
 
     const balanceResult = await client.query(
       `SELECT id, qty_on_hand, current_location_id
@@ -1438,7 +1506,7 @@ async function createTransaction(payload) {
         actionType === "ISSUE" && currentBalance ? currentBalance.current_location_id : null,
         location.id,
         payload.jobId ? Number(payload.jobId) : null,
-        payload.workOrderId ? Number(payload.workOrderId) : null,
+        workOrder ? Number(workOrder.id) : null,
         status ? status.id : null,
         Number(payload.userId),
         now,

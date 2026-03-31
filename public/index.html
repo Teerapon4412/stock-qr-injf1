@@ -180,7 +180,12 @@
 
               <label>
                 ใบงาน
-                <select id="workOrderId" name="workOrderId"></select>
+                <input id="workOrderCode" name="workOrderCode" list="work-order-options" placeholder="สแกนบาร์โค้ดหรือพิมพ์เลขใบงาน" />
+                <datalist id="work-order-options"></datalist>
+                <div class="button-row">
+                  <button id="workorder-scan-button" class="secondary-button small-button" type="button">สแกนบาร์โค้ดใบงาน</button>
+                </div>
+                <input id="workorder-scan-input" type="file" accept="image/*" capture="environment" class="hidden" />
               </label>
 
               <label>

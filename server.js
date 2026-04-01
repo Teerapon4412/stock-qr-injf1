@@ -1812,6 +1812,60 @@ async function getMasterExportData() {
   };
 }
 
+async function getQrMappingExportData() {
+  const exportedAt = new Date().toISOString();
+
+  if (!db) {
+    const store = readStore();
+    return {
+      exportedAt,
+      mappings: store.qrCodes
+        .filter(item => item.isActive)
+        .map(item => {
+          const entity = resolveEntity(store, item.entityType, item.entityId);
+          return {
+            qrValue: item.qrValue,
+            entityType: item.entityType,
+            entityId: item.entityId,
+            entityCode: entity ? entity.code : "",
+            entityName: entity ? entity.name : "",
+            isActive: item.isActive
+          };
+        })
+        .sort((a, b) => String(a.qrValue).localeCompare(String(b.qrValue)))
+    };
+  }
+
+  const result = await db.query(
+    `SELECT
+       q.qr_value,
+       q.entity_type,
+       q.entity_id,
+       q.is_active,
+       COALESCE(p.part_no, b.box_code, j.job_no, wo.work_order_no) AS entity_code,
+       COALESCE(p.part_name, b.description, j.job_name, wo.description, wo.work_order_no) AS entity_name
+     FROM qr_codes q
+     LEFT JOIN parts p ON q.entity_type = 'PART' AND p.id = q.entity_id
+     LEFT JOIN boxes b ON q.entity_type = 'BOX' AND b.id = q.entity_id
+     LEFT JOIN jobs j ON q.entity_type = 'JOB' AND j.id = q.entity_id
+     LEFT JOIN work_orders wo ON q.entity_type = 'WORK_ORDER' AND wo.id = q.entity_id
+     WHERE q.is_active = TRUE
+     ORDER BY q.qr_value ASC, q.id ASC`
+  );
+
+  return {
+    exportedAt,
+    mappings: result.rows.map(row => ({
+      qrValue: row.qr_value,
+      entityType: row.entity_type,
+      entityId: row.entity_id,
+      entityCode: row.entity_code || "",
+      entityName: row.entity_name || "",
+      isActive: row.is_active
+    }))
+  };
+}
+
 async function createMasterData(entity, payload) {
   if (!db) {
     const store = readStore();
@@ -2238,6 +2292,36 @@ const server = http.createServer(async (req, res) => {
           ]))
         ]
       })));
+    } catch (error) {
+      json(res, 500, { error: error.message || "Unexpected server error." });
+    }
+    return;
+  }
+
+  if (req.method === "GET" && requestUrl.pathname === "/api/export/qr-mapping.json") {
+    try {
+      const payload = await getQrMappingExportData();
+      jsonDownloadResponse(res, "qr-mapping.json", payload);
+    } catch (error) {
+      json(res, 500, { error: error.message || "Unexpected server error." });
+    }
+    return;
+  }
+
+  if (req.method === "GET" && requestUrl.pathname === "/api/export/qr-mapping.xlsx") {
+    try {
+      const payload = await getQrMappingExportData();
+      xlsxResponse(res, "qr-mapping.xlsx", "QRMapping", [
+        ["QR Value", "Entity Type", "Entity ID", "Entity Code", "Entity Name", "Is Active"],
+        ...payload.mappings.map(item => [
+          item.qrValue,
+          item.entityType,
+          item.entityId,
+          item.entityCode,
+          item.entityName,
+          item.isActive ? "TRUE" : "FALSE"
+        ])
+      ]);
     } catch (error) {
       json(res, 500, { error: error.message || "Unexpected server error." });
     }

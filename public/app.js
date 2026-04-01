@@ -435,6 +435,8 @@ function ensureMasterExportActions() {
   const wrapper = document.createElement("div");
   wrapper.className = "master-results-actions";
   wrapper.innerHTML = `
+    <a class="secondary-button export-link small-button" href="/api/export/qr-mapping.json">QR Mapping JSON</a>
+    <a class="secondary-button export-link small-button" href="/api/export/qr-mapping.xlsx">QR Mapping Excel</a>
     <a class="secondary-button export-link small-button" href="/api/export/master-data.json">Export JSON</a>
     <a class="secondary-button export-link small-button" href="/api/export/master-data.xlsx">Export Excel</a>
   `;

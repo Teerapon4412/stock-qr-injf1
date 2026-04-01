@@ -1682,6 +1682,28 @@ function xlsxResponse(res, filename, sheetName, rows) {
   res.end(buffer);
 }
 
+function workbookResponse(res, filename, sheets) {
+  const workbook = XLSX.utils.book_new();
+  sheets.forEach(sheet => {
+    const worksheet = XLSX.utils.aoa_to_sheet(sheet.rows);
+    XLSX.utils.book_append_sheet(workbook, worksheet, sheet.name);
+  });
+  const buffer = XLSX.write(workbook, { type: "buffer", bookType: "xlsx" });
+  res.writeHead(200, {
+    "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    "Content-Disposition": `attachment; filename="${filename}"`
+  });
+  res.end(buffer);
+}
+
+function jsonDownloadResponse(res, filename, payload) {
+  res.writeHead(200, {
+    "Content-Type": "application/json; charset=utf-8",
+    "Content-Disposition": `attachment; filename="${filename}"`
+  });
+  res.end(JSON.stringify(payload, null, 2));
+}
+
 function normalizeMasterRow(entity, row) {
   if (entity === "parts") {
     return {
@@ -1745,6 +1767,49 @@ async function getMasterData(entity) {
 
   const result = await db.query(queries[entity]);
   return result.rows.map(row => normalizeMasterRow(entity, row));
+}
+
+const masterExportConfigs = [
+  {
+    entity: "parts",
+    sheetName: "Parts",
+    headers: ["ID", "Code", "Name", "Unit", "Min Stock"]
+  },
+  {
+    entity: "boxes",
+    sheetName: "Boxes",
+    headers: ["ID", "Code", "Description", "Job ID", "Work Order ID"]
+  },
+  {
+    entity: "jobs",
+    sheetName: "Jobs",
+    headers: ["ID", "Code", "Name", "Extra 1", "Extra 2"]
+  },
+  {
+    entity: "work-orders",
+    sheetName: "WorkOrders",
+    headers: ["ID", "Code", "Description", "Job ID", "Planned Qty"]
+  },
+  {
+    entity: "qrs",
+    sheetName: "QRs",
+    headers: ["ID", "QR Value", "Entity Type", "Entity ID", "Is Active"]
+  }
+];
+
+async function getMasterExportData() {
+  const exportedAt = new Date().toISOString();
+  const entries = await Promise.all(
+    masterExportConfigs.map(async config => {
+      const rows = await getMasterData(config.entity);
+      return [config.entity, rows];
+    })
+  );
+
+  return {
+    exportedAt,
+    entities: Object.fromEntries(entries)
+  };
 }
 
 async function createMasterData(entity, payload) {
@@ -2141,6 +2206,38 @@ const server = http.createServer(async (req, res) => {
           item.entityType, item.code, item.name, item.qtyOnHand, item.unit, item.currentStatus, item.currentLocation, item.updatedAt, item.isLowStock ? "YES" : "NO"
         ])
       ]);
+    } catch (error) {
+      json(res, 500, { error: error.message || "Unexpected server error." });
+    }
+    return;
+  }
+
+  if (req.method === "GET" && requestUrl.pathname === "/api/export/master-data.json") {
+    try {
+      const payload = await getMasterExportData();
+      jsonDownloadResponse(res, "master-data.json", payload);
+    } catch (error) {
+      json(res, 500, { error: error.message || "Unexpected server error." });
+    }
+    return;
+  }
+
+  if (req.method === "GET" && requestUrl.pathname === "/api/export/master-data.xlsx") {
+    try {
+      const payload = await getMasterExportData();
+      workbookResponse(res, "master-data.xlsx", masterExportConfigs.map(config => ({
+        name: config.sheetName,
+        rows: [
+          config.headers,
+          ...((payload.entities[config.entity] || []).map(item => [
+            item.id,
+            item.code,
+            item.name,
+            item.extra1,
+            item.extra2
+          ]))
+        ]
+      })));
     } catch (error) {
       json(res, 500, { error: error.message || "Unexpected server error." });
     }

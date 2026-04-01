@@ -425,6 +425,23 @@ function masterTitle(entity) {
   }[entity];
 }
 
+function ensureMasterExportActions() {
+  const head = document.querySelector(".master-results-head");
+  if (!head || head.querySelector(".master-results-actions")) return;
+
+  const searchInput = $("master-search");
+  if (!searchInput) return;
+
+  const wrapper = document.createElement("div");
+  wrapper.className = "master-results-actions";
+  wrapper.innerHTML = `
+    <a class="secondary-button export-link small-button" href="/api/export/master-data.json">Export JSON</a>
+    <a class="secondary-button export-link small-button" href="/api/export/master-data.xlsx">Export Excel</a>
+  `;
+  wrapper.appendChild(searchInput);
+  head.appendChild(wrapper);
+}
+
 function renderMasters() {
   const needle = state.masterSearch.trim().toLowerCase();
   $("master-grid").innerHTML = Object.entries(state.masters).map(([entity, rows]) => {
@@ -1108,6 +1125,7 @@ async function initAuthenticatedApp() {
   syncDashboardFilterInputs();
   updateDashboardFilterMessage();
   await loadBootstrap();
+  ensureMasterExportActions();
   if (state.session?.role === "admin") {
     await Promise.all([refreshHistory(), refreshDashboard(), refreshMasters()]);
   } else {
